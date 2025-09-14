@@ -2,33 +2,72 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Season;
 use App\Models\User;
-use App\Models\Bet;
+use App\Models\UserStats;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class LeaderboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $leaderboard = User::withCount([
-            'bets as total_bets',
-            'bets as correct_bets' => function($query) {
-                $query->where('is_correct', true);
-            }
-        ])
-        ->withSum('bets as total_points', 'points_awarded')
-        ->having('total_bets', '>', 0)
-        ->orderByDesc('total_points')
-        ->orderByDesc('correct_bets')
-        ->get()
-        ->map(function($user, $index) {
-            $user->position = $index + 1;
-            $user->accuracy = $user->total_bets > 0 
-                ? round(($user->correct_bets / $user->total_bets) * 100, 1) 
-                : 0;
-            return $user;
+        $currentSeason = Season::where('active', true)->first();
+        
+        if (!$currentSeason) {
+            return Inertia::render('Leaderboard/Index', [
+                'leaderboard' => [],
+                'currentSeason' => null,
+                'message' => 'No active season found.'
+            ]);
+        }
+
+        $leaderboard = UserStats::with('user')
+                                ->where('season_id', $currentSeason->id)
+                                ->orderBy('total_points', 'desc')
+                                ->orderBy('accuracy_percentage', 'desc')
+                                ->limit(50)
+                                ->get();
+
+        // Update rankings
+        $leaderboard->each(function ($stats, $index) {
+            $stats->rank = $index + 1;
+            $stats->save();
         });
 
-        return view('leaderboard.index', compact('leaderboard'));
+        return Inertia::render('Leaderboard/Index', [
+            'leaderboard' => $leaderboard,
+            'currentSeason' => $currentSeason,
+            'userStats' => auth()->user() ? 
+                UserStats::where('user_id', auth()->id())
+                         ->where('season_id', $currentSeason->id)
+                         ->first() : null
+        ]);
+    }
+
+    // Individual user profile pages removed - not needed for this application
+
+    public function api()
+    {
+        $currentSeason = Season::where('active', true)->first();
+        
+        if (!$currentSeason) {
+            return response()->json([
+                'leaderboard' => [],
+                'message' => 'No active season found.'
+            ]);
+        }
+
+        $leaderboard = UserStats::with('user:_id,name')
+                                ->where('season_id', $currentSeason->id)
+                                ->orderBy('total_points', 'desc')
+                                ->orderBy('accuracy_percentage', 'desc')
+                                ->limit(10)
+                                ->get();
+
+        return response()->json([
+            'leaderboard' => $leaderboard,
+            'season' => $currentSeason
+        ]);
     }
 }

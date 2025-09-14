@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use MongoDB\Laravel\Eloquent\Model;
 
 class Team extends Model
 {
+    protected $connection = 'mongodb';
+    protected $collection = 'teams';
+
     protected $fillable = [
         'name',
         'short_name',
@@ -70,5 +73,20 @@ class Team extends Model
     public function hasCustomLogo(): bool
     {
         return !empty($this->attributes['logo_url']);
+    }
+
+    public function homeMatches()
+    {
+        return $this->hasMany(FootballMatch::class, 'home_team_id');
+    }
+
+    public function awayMatches()
+    {
+        return $this->hasMany(FootballMatch::class, 'away_team_id');
+    }
+
+    public function matches()
+    {
+        return $this->homeMatches()->union($this->awayMatches());
     }
 }

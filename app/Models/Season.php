@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use MongoDB\Laravel\Eloquent\Model;
 
 class Season extends Model
 {
+    protected $connection = 'mongodb';
+    protected $collection = 'seasons';
+
     protected $fillable = [
         'name',
         'year', 
@@ -21,12 +23,12 @@ class Season extends Model
         'active' => 'boolean'
     ];
     
-    public function gameweeks(): HasMany
+    public function gameweeks()
     {
         return $this->hasMany(Gameweek::class);
     }
     
-    public function userStats(): HasMany
+    public function userStats()
     {
         return $this->hasMany(UserStats::class);
     }

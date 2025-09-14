@@ -2,34 +2,42 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use MongoDB\Laravel\Eloquent\Model;
 
 class Gameweek extends Model
 {
+    protected $connection = 'mongodb';
+    protected $collection = 'gameweeks';
+
     protected $fillable = [
         'season_id',
         'number',
         'name',
-        'betting_deadline',
-        'active',
-        'results_finalized'
+        'start_date',
+        'end_date',
+        'deadline_time',
+        'active'
     ];
     
     protected $casts = [
-        'betting_deadline' => 'datetime',
-        'active' => 'boolean',
-        'results_finalized' => 'boolean'
+        'start_date' => 'datetime',
+        'end_date' => 'datetime',
+        'deadline_time' => 'datetime',
+        'active' => 'boolean'
     ];
     
-    public function season(): BelongsTo
+    public function season()
     {
         return $this->belongsTo(Season::class);
     }
     
-    public function matches(): HasMany
+    public function matches()
     {
         return $this->hasMany(FootballMatch::class);
+    }
+    
+    public function bets()
+    {
+        return $this->hasManyThrough(Bet::class, FootballMatch::class);
     }
 }
