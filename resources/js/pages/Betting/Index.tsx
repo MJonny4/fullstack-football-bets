@@ -12,15 +12,16 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 interface Team {
-    id: string;
+    _id: string;
     name: string;
     short_name: string;
+    logo_url?: string;
 }
 
 interface Match {
-    id: string;
-    home_team: Team;
-    away_team: Team;
+    _id: string;
+    home_team: Team | null;
+    away_team: Team | null;
     kickoff_time: string;
     status: string;
     home_score?: number;
@@ -28,7 +29,7 @@ interface Match {
 }
 
 interface Bet {
-    id: string;
+    _id: string;
     match_id: string;
     prediction: '1' | 'X' | '2';
 }
@@ -42,18 +43,26 @@ interface Props {
 }
 
 // Team Logo Component
-const TeamLogo = ({ team, size = 'lg' }: { team: Team; size?: 'xs' | 'sm' | 'lg' }) => {
+const TeamLogo = ({ team, size = 'lg' }: { team: Team | null; size?: 'xs' | 'sm' | 'lg' }) => {
     const sizeClasses = {
         xs: 'w-6 h-6',
         sm: 'w-8 h-8',
         lg: 'w-16 h-16'
     };
 
+    if (!team) {
+        return (
+            <div className={`${sizeClasses[size]} bg-gray-300 rounded-full flex items-center justify-center text-white font-bold`}>
+                ?
+            </div>
+        );
+    }
+
     if (team.logo_url) {
         return (
-            <img 
-                src={team.logo_url} 
-                alt={`${team.name} logo`} 
+            <img
+                src={team.logo_url}
+                alt={`${team.name} logo`}
                 className={`${sizeClasses[size]} object-contain`}
             />
         );
@@ -62,7 +71,7 @@ const TeamLogo = ({ team, size = 'lg' }: { team: Team; size?: 'xs' | 'sm' | 'lg'
     // Fallback with team initials
     return (
         <div className={`${sizeClasses[size]} bg-blue-500 rounded-full flex items-center justify-center text-white font-bold`}>
-            {team.short_name.substring(0, 2)}
+            {team.short_name?.substring(0, 2) || '??'}
         </div>
     );
 };
@@ -90,13 +99,13 @@ const MatchBetting = ({ match, userBet, onBetPlaced }: {
         setIsSubmitting(true);
         try {
             await router.post('/betting', {
-                match_id: match.id,
+                match_id: match._id,
                 prediction: prediction
             }, {
                 preserveState: true,
                 onSuccess: () => {
                     setSelectedPrediction(prediction);
-                    onBetPlaced(match.id, prediction);
+                    onBetPlaced(match._id, prediction);
                 }
             });
         } catch (error) {
@@ -117,8 +126,8 @@ const MatchBetting = ({ match, userBet, onBetPlaced }: {
                     <div className="flex items-center space-x-3 flex-1">
                         <TeamLogo team={match.home_team} size="lg" />
                         <div className="text-center">
-                            <div className="font-semibold text-gray-900">{match.home_team.name}</div>
-                            <div className="text-sm text-gray-600">{match.home_team.short_name}</div>
+                            <div className="font-semibold text-gray-900">{match.home_team?.name || 'Unknown Team'}</div>
+                            <div className="text-sm text-gray-600">{match.home_team?.short_name || 'N/A'}</div>
                         </div>
                     </div>
                     
@@ -129,8 +138,8 @@ const MatchBetting = ({ match, userBet, onBetPlaced }: {
                     <div className="flex items-center space-x-3 flex-1 flex-row-reverse">
                         <TeamLogo team={match.away_team} size="lg" />
                         <div className="text-center">
-                            <div className="font-semibold text-gray-900">{match.away_team.name}</div>
-                            <div className="text-sm text-gray-600">{match.away_team.short_name}</div>
+                            <div className="font-semibold text-gray-900">{match.away_team?.name || 'Unknown Team'}</div>
+                            <div className="text-sm text-gray-600">{match.away_team?.short_name || 'N/A'}</div>
                         </div>
                     </div>
                 </div>
@@ -165,7 +174,7 @@ const MatchBetting = ({ match, userBet, onBetPlaced }: {
                                 <TeamLogo team={match.home_team} size="xs" />
                                 <span className="font-bold text-lg">1</span>
                             </div>
-                            <div className="text-xs opacity-80">{match.home_team.short_name} Win</div>
+                            <div className="text-xs opacity-80">{match.home_team?.short_name || 'Home'} Win</div>
                         </Button>
                         
                         {/* Draw Button */}
@@ -196,7 +205,7 @@ const MatchBetting = ({ match, userBet, onBetPlaced }: {
                                 <span className="font-bold text-lg">2</span>
                                 <TeamLogo team={match.away_team} size="xs" />
                             </div>
-                            <div className="text-xs opacity-80">{match.away_team.short_name} Win</div>
+                            <div className="text-xs opacity-80">{match.away_team?.short_name || 'Away'} Win</div>
                         </Button>
                     </div>
 
@@ -208,14 +217,14 @@ const MatchBetting = ({ match, userBet, onBetPlaced }: {
                                 {selectedPrediction === '1' ? (
                                     <>
                                         <TeamLogo team={match.home_team} size="xs" />
-                                        <span>{match.home_team.short_name} Win</span>
+                                        <span>{match.home_team?.short_name || 'Home'} Win</span>
                                     </>
                                 ) : selectedPrediction === 'X' ? (
                                     <span>Draw</span>
                                 ) : (
                                     <>
                                         <TeamLogo team={match.away_team} size="xs" />
-                                        <span>{match.away_team.short_name} Win</span>
+                                        <span>{match.away_team?.short_name || 'Away'} Win</span>
                                     </>
                                 )}
                             </div>
@@ -232,14 +241,14 @@ const MatchBetting = ({ match, userBet, onBetPlaced }: {
                             {selectedPrediction === '1' ? (
                                 <>
                                     <TeamLogo team={match.home_team} size="xs" />
-                                    <span>{match.home_team.short_name} Win</span>
+                                    <span>{match.home_team?.short_name || 'Home'} Win</span>
                                 </>
                             ) : selectedPrediction === 'X' ? (
                                 <span>Draw</span>
                             ) : (
                                 <>
                                     <TeamLogo team={match.away_team} size="xs" />
-                                    <span>{match.away_team.short_name} Win</span>
+                                    <span>{match.away_team?.short_name || 'Away'} Win</span>
                                 </>
                             )}
                         </div>
@@ -264,7 +273,7 @@ export default function BettingIndex({
     const handleBetPlaced = (matchId: string, prediction: '1' | 'X' | '2') => {
         setBets(prev => ({
             ...prev,
-            [matchId]: { id: matchId, match_id: matchId, prediction }
+            [matchId]: { _id: matchId, match_id: matchId, prediction }
         }));
     };
 
@@ -313,9 +322,9 @@ export default function BettingIndex({
                     <div className="space-y-6">
                         {matches.map((match) => (
                             <MatchBetting
-                                key={match.id}
+                                key={match._id}
                                 match={match}
-                                userBet={bets[match.id]}
+                                userBet={bets[match._id]}
                                 onBetPlaced={handleBetPlaced}
                             />
                         ))}

@@ -23,18 +23,18 @@ class UserStats extends Model
         'total_points' => 'integer',
         'correct_predictions' => 'integer',
         'total_predictions' => 'integer',
-        'accuracy_percentage' => 'decimal:2',
+        'accuracy_percentage' => 'float',
         'rank' => 'integer'
     ];
-    
+
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id', '_id');
     }
-    
+
     public function season()
     {
-        return $this->belongsTo(Season::class);
+        return $this->belongsTo(Season::class, 'season_id', '_id');
     }
 
     /**

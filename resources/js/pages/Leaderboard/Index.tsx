@@ -10,8 +10,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 interface LeaderboardUser {
-    id: string;
-    name: string;
+    _id: string;
+    name?: string;
     total_points?: number;
     correct_bets?: number;
     total_bets?: number;
@@ -32,9 +32,10 @@ export default function LeaderboardIndex({
     userStats,
     message 
 }: Props) {
-    const getInitials = (name: string): string => {
+    const getInitials = (name: string | undefined): string => {
+        if (!name) return '?';
         return name.split(' ')
-                  .take(2)
+                  .slice(0, 2)
                   .map(word => word.substring(0, 1))
                   .join('');
     };
@@ -82,10 +83,10 @@ export default function LeaderboardIndex({
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {leaderboard.map((user, index) => {
                                         const position = user.position || index + 1;
-                                        const isCurrentUser = userStats && user.id === userStats.user_id;
+                                        const isCurrentUser = userStats && user._id === userStats.user_id;
                                         
                                         return (
-                                            <tr key={user.id} className={isCurrentUser ? 'bg-blue-50' : ''}>
+                                            <tr key={user._id} className={isCurrentUser ? 'bg-blue-50' : ''}>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="flex items-center">
                                                         {position <= 3 ? (
@@ -108,7 +109,7 @@ export default function LeaderboardIndex({
                                                         </div>
                                                         <div className="ml-4">
                                                             <div className="text-sm font-medium text-gray-900">
-                                                                {user.name}
+                                                                {user.name || 'Unknown User'}
                                                                 {isCurrentUser && (
                                                                     <span className="text-blue-500 ml-2">(You)</span>
                                                                 )}

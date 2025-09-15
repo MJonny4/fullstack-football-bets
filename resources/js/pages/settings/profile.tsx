@@ -87,6 +87,10 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                         autoComplete="bday"
                                     />
 
+                                    {auth.user.age && (
+                                        <p className="text-sm text-gray-600">Current age: {auth.user.age} years old</p>
+                                    )}
+
                                     <InputError className="mt-2" message={errors.date_of_birth} />
                                 </div>
 

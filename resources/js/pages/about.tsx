@@ -29,6 +29,18 @@ export default function About() {
                             ) : (
                                 <>
                                     <Link
+                                        href="/"
+                                        className="text-gray-700 hover:text-blue-600 font-semibold transition-colors"
+                                    >
+                                        Home
+                                    </Link>
+                                    <Link
+                                        href="/about"
+                                        className="text-gray-700 hover:text-blue-600 font-semibold transition-colors"
+                                    >
+                                        About
+                                    </Link>
+                                    <Link
                                         href={login()}
                                         className="text-gray-700 hover:text-blue-600 font-semibold transition-colors"
                                     >

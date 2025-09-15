@@ -39,6 +39,15 @@ class User extends Authenticatable
     ];
 
     /**
+     * The accessors to append to the model's array form.
+     *
+     * @var list<string>
+     */
+    protected $appends = [
+        'age',
+    ];
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -63,19 +72,31 @@ class User extends Authenticatable
             ->map(fn ($word) => Str::substr($word, 0, 1))
             ->implode('');
     }
+
+    /**
+     * Get the user's age in years
+     */
+    public function getAgeAttribute(): ?int
+    {
+        if (!$this->date_of_birth) {
+            return null;
+        }
+
+        return $this->date_of_birth->diffInYears(now());
+    }
     
     public function bets()
     {
-        return $this->hasMany(Bet::class);
+        return $this->hasMany(Bet::class, 'user_id', '_id');
     }
 
     public function userStats()
     {
-        return $this->hasMany(UserStats::class);
+        return $this->hasMany(UserStats::class, 'user_id', '_id');
     }
 
     public function leagueMemberships()
     {
-        return $this->hasMany(LeagueMembership::class);
+        return $this->hasMany(LeagueMembership::class, 'user_id', '_id');
     }
 }

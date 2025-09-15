@@ -13,7 +13,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 interface Match {
-    id: string;
+    _id: string;
     home_team: { name: string; short_name: string };
     away_team: { name: string; short_name: string };
     kickoff_time: string;
@@ -105,7 +105,7 @@ export default function Dashboard({
                             <div className="ml-4">
                                 <h3 className="text-lg font-semibold text-gray-900">Accuracy</h3>
                                 <p className="text-2xl font-bold text-green-600">
-                                    {userStats?.accuracy_percentage ? `${userStats.accuracy_percentage.toFixed(1)}%` : '0%'}
+                                    {userStats?.accuracy_percentage ? `${Number(userStats.accuracy_percentage).toFixed(1)}%` : '0%'}
                                 </p>
                             </div>
                         </div>

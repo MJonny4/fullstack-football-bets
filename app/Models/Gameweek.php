@@ -28,12 +28,12 @@ class Gameweek extends Model
     
     public function season()
     {
-        return $this->belongsTo(Season::class);
+        return $this->belongsTo(Season::class, 'season_id', '_id');
     }
     
     public function matches()
     {
-        return $this->hasMany(FootballMatch::class);
+        return $this->hasMany(FootballMatch::class, 'gameweek_id', '_id');
     }
     
     public function bets()

@@ -28,17 +28,17 @@ class FootballMatch extends Model
     
     public function gameweek()
     {
-        return $this->belongsTo(Gameweek::class);
+        return $this->belongsTo(Gameweek::class, 'gameweek_id', '_id');
     }
-    
+
     public function homeTeam()
     {
-        return $this->belongsTo(Team::class, 'home_team_id');
+        return $this->belongsTo(Team::class, 'home_team_id', '_id');
     }
-    
+
     public function awayTeam()
     {
-        return $this->belongsTo(Team::class, 'away_team_id');
+        return $this->belongsTo(Team::class, 'away_team_id', '_id');
     }
     
     public function bets()
