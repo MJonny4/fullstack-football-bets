@@ -52,7 +52,7 @@ const TeamLogo = ({ team, size = 'lg' }: { team: Team | null; size?: 'xs' | 'sm'
 
     if (!team) {
         return (
-            <div className={`${sizeClasses[size]} bg-gray-300 rounded-full flex items-center justify-center text-white font-bold`}>
+            <div className={`${sizeClasses[size]} bg-muted rounded-full flex items-center justify-center text-white font-bold`}>
                 ?
             </div>
         );
@@ -70,7 +70,7 @@ const TeamLogo = ({ team, size = 'lg' }: { team: Team | null; size?: 'xs' | 'sm'
 
     // Fallback with team initials
     return (
-        <div className={`${sizeClasses[size]} bg-blue-500 rounded-full flex items-center justify-center text-white font-bold`}>
+        <div className={`${sizeClasses[size]} bg-primary rounded-full flex items-center justify-center text-white font-bold`}>
             {team.short_name?.substring(0, 2) || '??'}
         </div>
     );
@@ -118,7 +118,7 @@ const MatchBetting = ({ match, userBet, onBetPlaced }: {
     const isDeadlinePassed = new Date(match.kickoff_time) <= new Date();
 
     return (
-        <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-gray-200/50">
+        <div className="bg-card/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-border/50">
             {/* Match Header with Team Logos */}
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center space-x-6 flex-1">
@@ -126,28 +126,28 @@ const MatchBetting = ({ match, userBet, onBetPlaced }: {
                     <div className="flex items-center space-x-3 flex-1">
                         <TeamLogo team={match.home_team} size="lg" />
                         <div className="text-center">
-                            <div className="font-semibold text-gray-900">{match.home_team?.name || 'Unknown Team'}</div>
-                            <div className="text-sm text-gray-600">{match.home_team?.short_name || 'N/A'}</div>
+                            <div className="font-semibold text-card-foreground">{match.home_team?.name || 'Unknown Team'}</div>
+                            <div className="text-sm text-muted-foreground">{match.home_team?.short_name || 'N/A'}</div>
                         </div>
                     </div>
                     
                     {/* VS */}
-                    <div className="text-2xl font-bold text-gray-400 px-4">vs</div>
+                    <div className="text-2xl font-bold text-muted-foreground px-4">vs</div>
                     
                     {/* Away Team */}
                     <div className="flex items-center space-x-3 flex-1 flex-row-reverse">
                         <TeamLogo team={match.away_team} size="lg" />
                         <div className="text-center">
-                            <div className="font-semibold text-gray-900">{match.away_team?.name || 'Unknown Team'}</div>
-                            <div className="text-sm text-gray-600">{match.away_team?.short_name || 'N/A'}</div>
+                            <div className="font-semibold text-card-foreground">{match.away_team?.name || 'Unknown Team'}</div>
+                            <div className="text-sm text-muted-foreground">{match.away_team?.short_name || 'N/A'}</div>
                         </div>
                     </div>
                 </div>
                 
                 {/* Match Time */}
                 <div className="text-right ml-4">
-                    <div className="text-sm text-gray-700 font-medium">{formatTime(match.kickoff_time)}</div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-sm text-card-foreground font-medium">{formatTime(match.kickoff_time)}</div>
+                    <div className="text-xs text-muted-foreground/70">
                         {new Date(match.kickoff_time) > new Date() 
                             ? `${Math.ceil((new Date(match.kickoff_time).getTime() - new Date().getTime()) / (1000 * 60 * 60))}h from now`
                             : 'Started'
@@ -166,8 +166,8 @@ const MatchBetting = ({ match, userBet, onBetPlaced }: {
                             disabled={isSubmitting}
                             className={`px-4 py-4 text-center rounded-xl font-medium transition-all duration-300 transform hover:scale-105 ${
                                 selectedPrediction === '1'
-                                    ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-lg border-2 border-teal-400'
-                                    : 'bg-white/80 text-gray-700 hover:bg-teal-50 border-2 border-gray-200 hover:border-teal-300'
+                                    ? 'bg-primary text-primary-foreground shadow-lg border-2 border-primary'
+                                    : 'bg-card text-card-foreground hover:bg-primary/10 border-2 border-border hover:border-primary/30'
                             }`}
                         >
                             <div className="flex items-center justify-center space-x-2 mb-1">
@@ -183,8 +183,8 @@ const MatchBetting = ({ match, userBet, onBetPlaced }: {
                             disabled={isSubmitting}
                             className={`px-4 py-4 text-center rounded-xl font-medium transition-all duration-300 transform hover:scale-105 ${
                                 selectedPrediction === 'X'
-                                    ? 'bg-gradient-to-r from-stone-500 to-stone-600 text-white shadow-lg border-2 border-stone-400'
-                                    : 'bg-white/80 text-gray-700 hover:bg-stone-50 border-2 border-gray-200 hover:border-stone-300'
+                                    ? 'bg-secondary text-secondary-foreground shadow-lg border-2 border-secondary'
+                                    : 'bg-card text-card-foreground hover:bg-secondary/10 border-2 border-border hover:border-secondary/30'
                             }`}
                         >
                             <div className="font-bold text-lg mb-1">X</div>
@@ -197,8 +197,8 @@ const MatchBetting = ({ match, userBet, onBetPlaced }: {
                             disabled={isSubmitting}
                             className={`px-4 py-4 text-center rounded-xl font-medium transition-all duration-300 transform hover:scale-105 ${
                                 selectedPrediction === '2'
-                                    ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg border-2 border-red-400'
-                                    : 'bg-white/80 text-gray-700 hover:bg-red-50 border-2 border-gray-200 hover:border-red-300'
+                                    ? 'bg-primary text-primary-foreground shadow-lg border-2 border-primary'
+                                    : 'bg-card text-card-foreground hover:bg-primary/10 border-2 border-border hover:border-primary/30'
                             }`}
                         >
                             <div className="flex items-center justify-center space-x-2 mb-1">
@@ -210,8 +210,8 @@ const MatchBetting = ({ match, userBet, onBetPlaced }: {
                     </div>
 
                     {selectedPrediction && (
-                        <div className="mt-4 p-3 bg-teal-50 rounded-xl text-center border border-teal-200">
-                            <div className="text-teal-700 text-sm font-medium flex items-center justify-center space-x-2">
+                        <div className="mt-4 p-3 bg-primary/10 rounded-xl text-center border border-primary/20">
+                            <div className="text-primary text-sm font-medium flex items-center justify-center space-x-2">
                                 <span>✓</span>
                                 <span>Your prediction:</span>
                                 {selectedPrediction === '1' ? (
@@ -233,10 +233,10 @@ const MatchBetting = ({ match, userBet, onBetPlaced }: {
                 </>
             ) : (
                 /* Betting Closed */
-                <div className="text-center py-6 bg-gray-50 rounded-xl border border-gray-200">
+                <div className="text-center py-6 bg-muted/50 rounded-xl border border-border">
                     <div className="text-red-500 font-medium text-lg mb-2">⏰ Betting Closed</div>
                     {selectedPrediction ? (
-                        <div className="text-sm text-gray-700 flex items-center justify-center space-x-2">
+                        <div className="text-sm text-card-foreground flex items-center justify-center space-x-2">
                             <span>Your bet:</span>
                             {selectedPrediction === '1' ? (
                                 <>
@@ -253,7 +253,7 @@ const MatchBetting = ({ match, userBet, onBetPlaced }: {
                             )}
                         </div>
                     ) : (
-                        <div className="text-sm text-gray-600">No bet placed</div>
+                        <div className="text-sm text-muted-foreground">No bet placed</div>
                     )}
                 </div>
             )}
@@ -281,8 +281,8 @@ export default function BettingIndex({
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
                 <Head title="Betting" />
-                <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-12 text-center shadow-lg border border-gray-200/50">
-                    <p className="text-gray-600">{message}</p>
+                <div className="bg-card/80 backdrop-blur-lg rounded-2xl p-12 text-center shadow-lg border border-border/50">
+                    <p className="text-muted-foreground">{message}</p>
                 </div>
             </AppLayout>
         );
@@ -295,19 +295,19 @@ export default function BettingIndex({
             {currentGameweek && matches.length > 0 ? (
                 <>
                     {/* Header Card */}
-                    <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-8 mb-6 shadow-lg border border-gray-200/50">
+                    <div className="bg-card/80 backdrop-blur-lg rounded-2xl p-8 mb-6 shadow-lg border border-border/50">
                         <div className="text-center">
                             <h1 className="text-3xl md:text-4xl font-bold mb-4">
                                 {currentGameweek.name}
                             </h1>
-                            <div className="flex items-center justify-center space-x-4 text-gray-600">
+                            <div className="flex items-center justify-center space-x-4 text-muted-foreground">
                                 {deadline && (
                                     <>
                                         <div className="flex items-center space-x-2">
-                                            <span className="text-blue-500">⏰</span>
+                                            <span className="text-primary">⏰</span>
                                             <span>Deadline: {new Date(deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
                                         </div>
-                                        <div className="w-px h-4 bg-gray-300"></div>
+                                        <div className="w-px h-4 bg-muted"></div>
                                     </>
                                 )}
                                 <div className="flex items-center space-x-2">
@@ -331,19 +331,19 @@ export default function BettingIndex({
                     </div>
 
                     {/* Footer Info */}
-                    <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 text-center mt-6 shadow-lg border border-gray-200/50">
-                        <div className="flex items-center justify-center space-x-2 text-gray-600">
-                            <span className="text-blue-500">💡</span>
+                    <div className="bg-card/80 backdrop-blur-lg rounded-2xl p-6 text-center mt-6 shadow-lg border border-border/50">
+                        <div className="flex items-center justify-center space-x-2 text-muted-foreground">
+                            <span className="text-primary">💡</span>
                             <span className="text-sm">You can change your predictions until the deadline!</span>
                         </div>
                     </div>
                 </>
             ) : (
                 /* No Matches State */
-                <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-12 text-center shadow-lg border border-gray-200/50">
+                <div className="bg-card/80 backdrop-blur-lg rounded-2xl p-12 text-center shadow-lg border border-border/50">
                     <div className="text-6xl mb-6">⚽</div>
-                    <h2 className="text-2xl font-bold text-gray-800 mb-4">No Active Gameweek</h2>
-                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                    <h2 className="text-2xl font-bold text-card-foreground mb-4">No Active Gameweek</h2>
+                    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                         There are currently no matches available for betting. New gameweeks are added regularly!
                     </p>
                     <a href="/teams" className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl font-medium hover:from-blue-600 hover:to-purple-600 transition-all shadow-lg hover:shadow-xl">

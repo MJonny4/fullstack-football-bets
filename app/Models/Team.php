@@ -22,17 +22,17 @@ class Team extends Model
     ];
     
     /**
-     * Get the team's logo URL with fallback
+     * Get the team's logo URL with fallback to local storage
      */
     public function getLogoUrlAttribute($value): string
     {
         if ($value) {
             return $value;
         }
-        
-        // Fallback to GitHub repository based on team name
+
+        // Fallback to local team images
         $teamSlug = $this->getTeamSlugForLogo();
-        return "https://raw.githubusercontent.com/luukhopman/football-logos/main/premier-league/{$teamSlug}.png";
+        return "/images/teams/{$teamSlug}.png";
     }
     
     /**
@@ -40,29 +40,37 @@ class Team extends Model
      */
     private function getTeamSlugForLogo(): string
     {
-        // Convert team name to slug format used in the repository
+        // Convert team name to slug format for local images
         $name = strtolower($this->name);
-        
-        // Handle special cases
+
+        // Handle special cases for invented teams
         $replacements = [
-            'real madrid' => 'real-madrid',
-            'atletico madrid' => 'atletico-madrid',
-            'manchester united' => 'manchester-united',
-            'manchester city' => 'manchester-city',
-            'tottenham hotspur' => 'tottenham',
-            'crystal palace' => 'crystal-palace',
-            'west ham united' => 'west-ham',
-            'brighton & hove albion' => 'brighton',
-            'nottingham forest' => 'nottingham-forest',
-            'afc bournemouth' => 'bournemouth',
-            'sheffield united' => 'sheffield-united',
-            'luton town' => 'luton-town',
+            'thunder wolves' => 'thunder-wolves',
+            'steel lions' => 'steel-lions',
+            'crimson eagles' => 'crimson-eagles',
+            'azure knights' => 'azure-knights',
+            'golden spartans' => 'golden-spartans',
+            'shadow panthers' => 'shadow-panthers',
+            'fire dragons' => 'fire-dragons',
+            'ice titans' => 'ice-titans',
+            'emerald falcons' => 'emerald-falcons',
+            'violet vipers' => 'violet-vipers',
+            'silver stallions' => 'silver-stallions',
+            'copper cobras' => 'copper-cobras',
+            'neon nighthawks' => 'neon-nighthawks',
+            'royal raptors' => 'royal-raptors',
+            'plasma phoenix' => 'plasma-phoenix',
+            'quantum quakes' => 'quantum-quakes',
+            'mystic meteors' => 'mystic-meteors',
+            'rift runners' => 'rift-runners',
+            'nova nomads' => 'nova-nomads',
+            'zenith zephyrs' => 'zenith-zephyrs',
         ];
-        
+
         if (isset($replacements[$name])) {
             return $replacements[$name];
         }
-        
+
         // Default: replace spaces with hyphens
         return str_replace(' ', '-', $name);
     }

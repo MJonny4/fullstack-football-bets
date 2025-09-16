@@ -81,14 +81,14 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                         id="date_of_birth"
                                         type="date"
                                         className="mt-1 block w-full"
-                                        defaultValue={auth.user.date_of_birth}
+                                        defaultValue={auth.user.date_of_birth ? new Date(auth.user.date_of_birth).toISOString().split('T')[0] : ''}
                                         name="date_of_birth"
                                         required
                                         autoComplete="bday"
                                     />
 
                                     {auth.user.age && (
-                                        <p className="text-sm text-gray-600">Current age: {auth.user.age} years old</p>
+                                        <p className="text-sm text-muted-foreground">Current age: {auth.user.age} years old</p>
                                     )}
 
                                     <InputError className="mt-2" message={errors.date_of_birth} />
@@ -101,14 +101,14 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                             <Link
                                                 href={send()}
                                                 as="button"
-                                                className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
+                                                className="text-tommy-red dark:text-tommy-red-dark underline decoration-tommy-red/30 dark:decoration-tommy-red-dark/30 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current"
                                             >
                                                 Click here to resend the verification email.
                                             </Link>
                                         </p>
 
                                         {status === 'verification-link-sent' && (
-                                            <div className="mt-2 text-sm font-medium text-green-600">
+                                            <div className="mt-2 text-sm font-medium text-tommy-navy dark:text-tommy-navy-dark">
                                                 A new verification link has been sent to your email address.
                                             </div>
                                         )}
@@ -125,7 +125,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                         leave="transition ease-in-out"
                                         leaveTo="opacity-0"
                                     >
-                                        <p className="text-sm text-neutral-600">Saved</p>
+                                        <p className="text-sm text-muted-foreground">Saved</p>
                                     </Transition>
                                 </div>
                             </>

@@ -25,14 +25,14 @@ class BettingController extends Controller
         }
 
         $matches = FootballMatch::with(['homeTeam', 'awayTeam'])
-                                ->where('gameweek_id', $currentGameweek->id)
+                                ->where('gameweek_id', $currentGameweek->_id)
                                 ->orderBy('kickoff_time', 'asc')
                                 ->get();
 
         $userBets = [];
         if (Auth::check()) {
             $userBets = Bet::where('user_id', Auth::id())
-                          ->whereIn('match_id', $matches->pluck('id'))
+                          ->whereIn('match_id', $matches->pluck('_id'))
                           ->get()
                           ->keyBy('match_id');
         }

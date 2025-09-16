@@ -1,6 +1,7 @@
 import { dashboard, login, register } from '@/routes';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
+import { Navbar } from '@/components/navbar';
 
 export default function Welcome() {
     const { auth } = usePage<SharedData>().props;
@@ -11,52 +12,9 @@ export default function Welcome() {
                 <link rel="preconnect" href="https://fonts.bunny.net" />
                 <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
             </Head>
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+            <div className="min-h-screen bg-gradient-to-br from-background via-card to-background">
                 {/* Navigation */}
-                <header className="px-6 py-4">
-                    <nav className="max-w-7xl mx-auto flex items-center justify-between">
-                        <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                            ScorePredict
-                        </div>
-                        <div className="flex items-center gap-4">
-                            {auth.user ? (
-                                <Link
-                                    href={dashboard()}
-                                    className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-2 rounded-xl font-semibold hover:from-blue-600 hover:to-purple-600 transition-all transform hover:scale-105 shadow-lg"
-                                >
-                                    Dashboard
-                                </Link>
-                            ) : (
-                                <>
-                                    <Link
-                                        href="/"
-                                        className="text-gray-700 hover:text-blue-600 font-semibold transition-colors"
-                                    >
-                                        Home
-                                    </Link>
-                                    <Link
-                                        href="/about"
-                                        className="text-gray-700 hover:text-blue-600 font-semibold transition-colors"
-                                    >
-                                        About
-                                    </Link>
-                                    <Link
-                                        href={login()}
-                                        className="text-gray-700 hover:text-blue-600 font-semibold transition-colors"
-                                    >
-                                        Log in
-                                    </Link>
-                                    <Link
-                                        href={register()}
-                                        className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-2 rounded-xl font-semibold hover:from-blue-600 hover:to-purple-600 transition-all transform hover:scale-105 shadow-lg"
-                                    >
-                                        Register
-                                    </Link>
-                                </>
-                            )}
-                        </div>
-                    </nav>
-                </header>
+                <Navbar />
 
                 {/* Hero Section */}
                 <section className="relative px-6 py-10">
