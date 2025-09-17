@@ -13,12 +13,14 @@ interface NavItem {
 }
 
 export function Navbar() {
-    const { auth, url } = usePage<SharedData>().props;
+    const page = usePage<SharedData>();
+    const { auth } = page.props;
+    const currentUrl = page.url || '';
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // Determine current route context
-    const isHomepage = url === '/';
-    const isDashboard = url.startsWith('/dashboard');
+    const isHomepage = currentUrl === '/';
+    const isDashboard = currentUrl.startsWith('/dashboard');
     const isAuthenticated = !!auth.user;
 
     // Define navigation items based on requirements
@@ -34,8 +36,8 @@ export function Navbar() {
                 return [
                     { href: '/', label: 'Home', icon: Home, showWhen: 'always' },
                     { href: '/about', label: 'About', icon: Info, showWhen: 'always' },
-                    { href: login(), label: 'Login', icon: LogIn, showWhen: 'guest' },
-                    { href: register(), label: 'Register', icon: UserPlus, showWhen: 'guest' },
+                    { href: login.url(), label: 'Login', icon: LogIn, showWhen: 'guest' },
+                    { href: register.url(), label: 'Register', icon: UserPlus, showWhen: 'guest' },
                 ];
             }
         } else if (isDashboard) {
@@ -61,8 +63,8 @@ export function Navbar() {
                 return [
                     { href: '/', label: 'Home', icon: Home, showWhen: 'always' },
                     { href: '/about', label: 'About', icon: Info, showWhen: 'always' },
-                    { href: login(), label: 'Login', icon: LogIn, showWhen: 'guest' },
-                    { href: register(), label: 'Register', icon: UserPlus, showWhen: 'guest' },
+                    { href: login.url(), label: 'Login', icon: LogIn, showWhen: 'guest' },
+                    { href: register.url(), label: 'Register', icon: UserPlus, showWhen: 'guest' },
                 ];
             }
         }
@@ -78,9 +80,9 @@ export function Navbar() {
 
     const isActiveRoute = (href: string) => {
         if (href === '/') {
-            return url === '/';
+            return currentUrl === '/';
         }
-        return url.startsWith(href);
+        return currentUrl.startsWith(href);
     };
 
     return (
