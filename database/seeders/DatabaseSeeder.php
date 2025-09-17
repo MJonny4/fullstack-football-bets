@@ -14,16 +14,9 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            TeamSeeder::class,
-            SeasonSeeder::class,
-            GameweekSeeder::class,
-            MatchSeeder::class,
-        ]);
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'date_of_birth' => '1990-01-01',
+            TeamsSeeder::class,
+            SeasonsAndGameweeksSeeder::class,
+            GamesSeeder::class,
         ]);
     }
 }
