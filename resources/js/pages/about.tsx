@@ -1,20 +1,17 @@
+import AppLayout from '@/layouts/app-layout';
 import { register, login } from '@/routes';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { Navbar } from '@/components/navbar';
 
 export default function About() {
     const { auth } = usePage<SharedData>().props;
 
     return (
-        <>
+        <AppLayout>
             <Head title="About Us - Our Story">
                 <link rel="preconnect" href="https://fonts.bunny.net" />
                 <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
             </Head>
-            <div className="min-h-screen bg-gradient-to-br from-background via-card to-background">
-                {/* Navigation */}
-                <Navbar />
 
                 {/* Hero Section */}
                 <section className="relative px-6 py-8">
@@ -222,7 +219,6 @@ export default function About() {
                         </div>
                     </div>
                 </section>
-            </div>
-        </>
+        </AppLayout>
     );
 }

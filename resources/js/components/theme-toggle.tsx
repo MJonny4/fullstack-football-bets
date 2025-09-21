@@ -1,12 +1,45 @@
 import { Button } from '@/components/ui/button';
 import { useAppearance } from '@/hooks/use-appearance';
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Sun, Monitor } from 'lucide-react';
 
 export function ThemeToggle() {
-    const { appearance, setAppearance } = useAppearance();
+    const { appearance, updateAppearance } = useAppearance();
 
     const toggleTheme = () => {
-        setAppearance(appearance === 'dark' ? 'light' : 'dark');
+        // Cycle through: light → dark → system → light
+        if (appearance === 'light') {
+            updateAppearance('dark');
+        } else if (appearance === 'dark') {
+            updateAppearance('system');
+        } else {
+            updateAppearance('light');
+        }
+    };
+
+    const getIcon = () => {
+        switch (appearance) {
+            case 'light':
+                return <Sun className="h-4 w-4" />;
+            case 'dark':
+                return <Moon className="h-4 w-4" />;
+            case 'system':
+                return <Monitor className="h-4 w-4" />;
+            default:
+                return <Sun className="h-4 w-4" />;
+        }
+    };
+
+    const getAriaLabel = () => {
+        switch (appearance) {
+            case 'light':
+                return 'Switch to dark mode';
+            case 'dark':
+                return 'Switch to system mode';
+            case 'system':
+                return 'Switch to light mode';
+            default:
+                return 'Toggle theme';
+        }
     };
 
     return (
@@ -15,10 +48,9 @@ export function ThemeToggle() {
             size="sm"
             onClick={toggleTheme}
             className="h-8 w-8 px-0 text-primary hover:bg-primary/10"
-            aria-label="Toggle theme"
+            aria-label={getAriaLabel()}
         >
-            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            {getIcon()}
         </Button>
     );
 }

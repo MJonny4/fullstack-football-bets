@@ -29,10 +29,11 @@ class BettingController extends Controller
                                 ->orderBy('kickoff_time', 'asc')
                                 ->get();
 
+
         $userBets = [];
         if (Auth::check()) {
             $userBets = Bet::where('user_id', Auth::id())
-                          ->whereIn('match_id', $matches->pluck('_id'))
+                          ->whereIn('match_id', $matches->pluck('id'))
                           ->get()
                           ->keyBy('match_id');
         }
@@ -47,18 +48,17 @@ class BettingController extends Controller
 
     public function store(Request $request)
     {
+
         $request->validate([
-            'match_id' => 'required|exists:matches,_id',
+            'match_id' => 'required|string',
             'prediction' => 'required|in:1,X,2'
         ]);
 
         $match = FootballMatch::findOrFail($request->match_id);
-        
+
         // Check if betting is still allowed
         if ($match->hasStarted()) {
-            return response()->json([
-                'message' => 'Betting is closed for this match.'
-            ], 400);
+            return back()->withErrors(['betting' => 'Betting is closed for this match.']);
         }
 
         // Check if user already has a bet for this match
@@ -83,9 +83,18 @@ class BettingController extends Controller
             ]);
         }
 
-        return response()->json([
-            'bet' => $bet,
-            'message' => 'Bet placed successfully!'
+
+        // Get updated user bets for the current gameweek
+        $currentGameweek = Gameweek::where('active', true)->first();
+        $matches = FootballMatch::where('gameweek_id', $currentGameweek->_id)->get();
+        $userBets = Bet::where('user_id', Auth::id())
+                      ->whereIn('match_id', $matches->pluck('id'))
+                      ->get()
+                      ->keyBy('match_id');
+
+        return back()->with([
+            'message' => 'Bet placed successfully!',
+            'userBets' => $userBets
         ]);
     }
 

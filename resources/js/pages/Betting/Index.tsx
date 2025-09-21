@@ -1,15 +1,6 @@
-import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { useState } from 'react';
-
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Betting',
-        href: '/betting',
-    },
-];
+import { useState, useEffect } from 'react';
 
 interface Team {
     _id: string;
@@ -20,6 +11,7 @@ interface Team {
 
 interface Match {
     _id: string;
+    id: string;
     home_team: Team | null;
     away_team: Team | null;
     kickoff_time: string;
@@ -85,6 +77,11 @@ const MatchBetting = ({ match, userBet, onBetPlaced }: {
     const [selectedPrediction, setSelectedPrediction] = useState<'1' | 'X' | '2' | null>(userBet?.prediction || null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Update selectedPrediction when userBet changes (e.g., when navigating back)
+    useEffect(() => {
+        setSelectedPrediction(userBet?.prediction || null);
+    }, [userBet]);
+
     const formatTime = (datetime: string) => {
         return new Date(datetime).toLocaleString('en-GB', {
             weekday: 'short',
@@ -95,24 +92,26 @@ const MatchBetting = ({ match, userBet, onBetPlaced }: {
         });
     };
 
-    const handlePlaceBet = async (prediction: '1' | 'X' | '2') => {
+    const handlePlaceBet = (prediction: '1' | 'X' | '2') => {
         setIsSubmitting(true);
-        try {
-            await router.post('/betting', {
-                match_id: match._id,
-                prediction: prediction
-            }, {
-                preserveState: true,
-                onSuccess: () => {
-                    setSelectedPrediction(prediction);
-                    onBetPlaced(match._id, prediction);
-                }
-            });
-        } catch (error) {
-            console.error('Error placing bet:', error);
-        } finally {
-            setIsSubmitting(false);
-        }
+        router.post('/betting', {
+            match_id: match.id,
+            prediction: prediction
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['userBets'],
+            onSuccess: () => {
+                setSelectedPrediction(prediction);
+                onBetPlaced(match._id, prediction);
+            },
+            onError: (error) => {
+                console.error('❌ Error:', error);
+            },
+            onFinish: () => {
+                setIsSubmitting(false);
+            }
+        });
     };
 
     const isDeadlinePassed = new Date(match.kickoff_time) <= new Date();
@@ -130,12 +129,12 @@ const MatchBetting = ({ match, userBet, onBetPlaced }: {
                             <div className="text-sm text-muted-foreground">{match.home_team?.short_name || 'N/A'}</div>
                         </div>
                     </div>
-                    
+
                     {/* VS */}
                     <div className="text-2xl font-bold text-muted-foreground px-4">vs</div>
-                    
+
                     {/* Away Team */}
-                    <div className="flex items-center space-x-3 flex-1 flex-row-reverse">
+                    <div className="flex items-center gap-4 flex-1 flex-row-reverse">
                         <TeamLogo team={match.away_team} size="lg" />
                         <div className="text-center">
                             <div className="font-semibold text-card-foreground">{match.away_team?.name || 'Unknown Team'}</div>
@@ -143,12 +142,12 @@ const MatchBetting = ({ match, userBet, onBetPlaced }: {
                         </div>
                     </div>
                 </div>
-                
+
                 {/* Match Time */}
                 <div className="text-right ml-4">
                     <div className="text-sm text-card-foreground font-medium">{formatTime(match.kickoff_time)}</div>
                     <div className="text-xs text-muted-foreground/70">
-                        {new Date(match.kickoff_time) > new Date() 
+                        {new Date(match.kickoff_time) > new Date()
                             ? `${Math.ceil((new Date(match.kickoff_time).getTime() - new Date().getTime()) / (1000 * 60 * 60))}h from now`
                             : 'Started'
                         }
@@ -161,52 +160,52 @@ const MatchBetting = ({ match, userBet, onBetPlaced }: {
                     {/* Betting Buttons */}
                     <div className="grid grid-cols-3 gap-3">
                         {/* Home Win Button */}
-                        <Button
+                        <button
                             onClick={() => handlePlaceBet('1')}
                             disabled={isSubmitting}
-                            className={`px-4 py-4 text-center rounded-xl font-medium transition-all duration-300 transform hover:scale-105 ${
+                            className={`px-4 py-4 text-center rounded-xl font-medium transition-all duration-300 transform hover:scale-105 cursor-pointer ${
                                 selectedPrediction === '1'
                                     ? 'bg-primary text-primary-foreground shadow-lg border-2 border-primary'
                                     : 'bg-card text-card-foreground hover:bg-primary/10 border-2 border-border hover:border-primary/30'
-                            }`}
+                            } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                             <div className="flex items-center justify-center space-x-2 mb-1">
                                 <TeamLogo team={match.home_team} size="xs" />
                                 <span className="font-bold text-lg">1</span>
                             </div>
                             <div className="text-xs opacity-80">{match.home_team?.short_name || 'Home'} Win</div>
-                        </Button>
-                        
+                        </button>
+
                         {/* Draw Button */}
-                        <Button
+                        <button
                             onClick={() => handlePlaceBet('X')}
                             disabled={isSubmitting}
-                            className={`px-4 py-4 text-center rounded-xl font-medium transition-all duration-300 transform hover:scale-105 ${
+                            className={`px-4 py-4 text-center rounded-xl font-medium transition-all duration-300 transform hover:scale-105 cursor-pointer ${
                                 selectedPrediction === 'X'
                                     ? 'bg-secondary text-secondary-foreground shadow-lg border-2 border-secondary'
                                     : 'bg-card text-card-foreground hover:bg-secondary/10 border-2 border-border hover:border-secondary/30'
-                            }`}
+                            } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                             <div className="font-bold text-lg mb-1">X</div>
                             <div className="text-xs opacity-80">Draw</div>
-                        </Button>
-                        
+                        </button>
+
                         {/* Away Win Button */}
-                        <Button
+                        <button
                             onClick={() => handlePlaceBet('2')}
                             disabled={isSubmitting}
-                            className={`px-4 py-4 text-center rounded-xl font-medium transition-all duration-300 transform hover:scale-105 ${
+                            className={`px-4 py-4 text-center rounded-xl font-medium transition-all duration-300 transform hover:scale-105 cursor-pointer ${
                                 selectedPrediction === '2'
                                     ? 'bg-primary text-primary-foreground shadow-lg border-2 border-primary'
                                     : 'bg-card text-card-foreground hover:bg-primary/10 border-2 border-border hover:border-primary/30'
-                            }`}
+                            } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                             <div className="flex items-center justify-center space-x-2 mb-1">
                                 <span className="font-bold text-lg">2</span>
                                 <TeamLogo team={match.away_team} size="xs" />
                             </div>
                             <div className="text-xs opacity-80">{match.away_team?.short_name || 'Away'} Win</div>
-                        </Button>
+                        </button>
                     </div>
 
                     {selectedPrediction && (
@@ -261,14 +260,20 @@ const MatchBetting = ({ match, userBet, onBetPlaced }: {
     );
 };
 
-export default function BettingIndex({ 
-    matches = [], 
-    userBets = {}, 
-    currentGameweek, 
+export default function BettingIndex({
+    matches = [],
+    userBets = {},
+    currentGameweek,
     deadline,
-    message 
+    message
 }: Props) {
     const [bets, setBets] = useState(userBets);
+
+    // Update bets when userBets prop changes (e.g., when navigating back)
+    useEffect(() => {
+        setBets(userBets);
+    }, [userBets]);
+
 
     const handleBetPlaced = (matchId: string, prediction: '1' | 'X' | '2') => {
         setBets(prev => ({
@@ -279,7 +284,7 @@ export default function BettingIndex({
 
     if (message) {
         return (
-            <AppLayout breadcrumbs={breadcrumbs}>
+            <AppLayout>
                 <Head title="Betting" />
                 <div className="bg-card/80 backdrop-blur-lg rounded-2xl p-12 text-center shadow-lg border border-border/50">
                     <p className="text-muted-foreground">{message}</p>
@@ -289,9 +294,9 @@ export default function BettingIndex({
     }
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout>
             <Head title="Betting" />
-            
+
             {currentGameweek && matches.length > 0 ? (
                 <>
                     {/* Header Card */}
@@ -320,11 +325,11 @@ export default function BettingIndex({
 
                     {/* Matches Grid */}
                     <div className="space-y-6">
-                        {matches.map((match) => (
+                        {matches.map((match, index) => (
                             <MatchBetting
-                                key={match._id}
+                                key={match._id || `match-${index}`}
                                 match={match}
-                                userBet={bets[match._id]}
+                                userBet={bets[match.id]}
                                 onBetPlaced={handleBetPlaced}
                             />
                         ))}

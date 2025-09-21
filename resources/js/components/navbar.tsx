@@ -1,8 +1,8 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link, usePage, router } from '@inertiajs/react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { type SharedData } from '@/types';
-import { dashboard, login, register } from '@/routes';
-import { Home, Info, LogIn, UserPlus, BarChart3, Trophy, Settings, User } from 'lucide-react';
+import { dashboard, login, register, logout } from '@/routes';
+import { Home, Info, LogIn, UserPlus, BarChart3, Trophy, Settings, LogOut, User } from 'lucide-react';
 import { useState } from 'react';
 
 interface NavItem {
@@ -17,6 +17,12 @@ export function Navbar() {
     const { auth } = page.props;
     const currentUrl = page.url || '';
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+
+    // Handle logout
+    const handleLogout = () => {
+        router.post(logout.url());
+    };
 
     // Determine current route context
     const isHomepage = currentUrl === '/';
@@ -47,7 +53,6 @@ export function Navbar() {
                 { href: '/dashboard', label: 'Dashboard', icon: BarChart3, showWhen: 'authenticated' },
                 { href: '/betting', label: 'Betting', icon: Trophy, showWhen: 'authenticated' },
                 { href: '/leaderboard', label: 'Leaderboard', icon: Trophy, showWhen: 'authenticated' },
-                { href: '/settings', label: 'Settings', icon: Settings, showWhen: 'authenticated' },
             ];
         } else {
             // Other pages navigation
@@ -57,7 +62,6 @@ export function Navbar() {
                     { href: '/dashboard', label: 'Dashboard', icon: BarChart3, showWhen: 'authenticated' },
                     { href: '/betting', label: 'Betting', icon: Trophy, showWhen: 'authenticated' },
                     { href: '/leaderboard', label: 'Leaderboard', icon: Trophy, showWhen: 'authenticated' },
-                    { href: '/settings', label: 'Settings', icon: Settings, showWhen: 'authenticated' },
                 ];
             } else {
                 return [
@@ -101,7 +105,7 @@ export function Navbar() {
                         </Link>
 
                         {/* Desktop Navigation */}
-                        <div className="hidden md:flex items-center gap-2">
+                        <div className="hidden md:flex items-center gap-2 flex-1 justify-end mr-4">
                             {filteredItems.map((item) => {
                                 const Icon = item.icon;
                                 const isActive = isActiveRoute(item.href);
@@ -127,11 +131,62 @@ export function Navbar() {
                         <div className="flex items-center gap-3">
                             {/* User Menu */}
                             {isAuthenticated && (
-                                <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl bg-muted/50">
-                                    <User className="w-4 h-4 text-muted-foreground" />
-                                    <span className="text-sm font-medium text-card-foreground">
-                                        {auth.user.name}
-                                    </span>
+                                <div className="hidden md:block relative">
+                                    <button
+                                        onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                                        className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary text-primary-foreground font-bold text-lg hover:bg-primary/90 transition-colors"
+                                        aria-label="User menu"
+                                    >
+                                        {auth.user.name.charAt(0).toUpperCase()}
+                                    </button>
+
+                                    {/* Dropdown Menu */}
+                                    {isUserDropdownOpen && (
+                                        <>
+                                            {/* Backdrop */}
+                                            <div
+                                                className="fixed inset-0 z-40"
+                                                onClick={() => setIsUserDropdownOpen(false)}
+                                            />
+
+                                            {/* Dropdown Content */}
+                                            <div className="absolute right-0 mt-2 w-56 bg-card rounded-xl border border-border shadow-lg z-50">
+                                                <div className="p-3 border-b border-border">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-primary-foreground font-bold text-sm">
+                                                            {auth.user.name.charAt(0).toUpperCase()}
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-medium text-card-foreground">{auth.user.name}</p>
+                                                            <p className="text-xs text-muted-foreground">{auth.user.email}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="p-2">
+                                                    <Link
+                                                        href="/settings"
+                                                        onClick={() => setIsUserDropdownOpen(false)}
+                                                        className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
+                                                    >
+                                                        <Settings className="w-4 h-4" />
+                                                        Settings
+                                                    </Link>
+
+                                                    <button
+                                                        onClick={() => {
+                                                            handleLogout();
+                                                            setIsUserDropdownOpen(false);
+                                                        }}
+                                                        className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors w-full text-left"
+                                                    >
+                                                        <LogOut className="w-4 h-4" />
+                                                        Logout
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             )}
 
@@ -189,10 +244,34 @@ export function Navbar() {
                                 {/* Mobile User Info */}
                                 {isAuthenticated && (
                                     <div className="mt-2 pt-2 border-t border-border/30">
-                                        <div className="flex items-center gap-3 px-4 py-2 text-muted-foreground">
-                                            <User className="w-5 h-5" />
+                                        <div className="flex items-center gap-3 px-4 py-2 text-muted-foreground mb-2">
+                                            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-primary-foreground font-bold text-sm">
+                                                {auth.user.name.charAt(0).toUpperCase()}
+                                            </div>
                                             <span className="text-sm">Signed in as {auth.user.name}</span>
                                         </div>
+
+                                        {/* Mobile Settings Link */}
+                                        <Link
+                                            href="/settings"
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                            className="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 text-muted-foreground hover:text-card-foreground hover:bg-muted/50"
+                                        >
+                                            <Settings className="w-5 h-5" />
+                                            <span>Settings</span>
+                                        </Link>
+
+                                        {/* Mobile Logout Button */}
+                                        <button
+                                            onClick={() => {
+                                                handleLogout();
+                                                setIsMobileMenuOpen(false);
+                                            }}
+                                            className="flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 text-muted-foreground hover:text-card-foreground hover:bg-muted/50 w-full text-left"
+                                        >
+                                            <LogOut className="w-5 h-5" />
+                                            <span>Logout</span>
+                                        </button>
                                     </div>
                                 )}
                             </div>
