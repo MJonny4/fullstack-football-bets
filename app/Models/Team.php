@@ -2,99 +2,72 @@
 
 namespace App\Models;
 
-use MongoDB\Laravel\Eloquent\Model;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Team extends Model
 {
-    protected $connection = 'mongodb';
-    protected $collection = 'teams';
+    use HasFactory;
 
     protected $fillable = [
         'name',
         'short_name',
         'logo_url',
-        'country',
-        'active'
+        'active',
+        'strength_rating',
     ];
-    
+
     protected $casts = [
-        'active' => 'boolean'
+        'active' => 'boolean',
+        'strength_rating' => 'decimal:2',
     ];
-    
+
     /**
-     * Get the team's logo URL with fallback to local storage
+     * Get all home matches for this team.
      */
-    public function getLogoUrlAttribute($value): string
-    {
-        if ($value) {
-            return $value;
-        }
-
-        // Fallback to local team images
-        $teamSlug = $this->getTeamSlugForLogo();
-        return "/images/teams/{$teamSlug}.png";
-    }
-    
-    /**
-     * Get the team slug for logo filename
-     */
-    private function getTeamSlugForLogo(): string
-    {
-        // Convert team name to slug format for local images
-        $name = strtolower($this->name);
-
-        // Handle special cases for invented teams
-        $replacements = [
-            'thunder wolves' => 'thunder-wolves',
-            'steel lions' => 'steel-lions',
-            'crimson eagles' => 'crimson-eagles',
-            'azure knights' => 'azure-knights',
-            'golden spartans' => 'golden-spartans',
-            'shadow panthers' => 'shadow-panthers',
-            'fire dragons' => 'fire-dragons',
-            'ice titans' => 'ice-titans',
-            'emerald falcons' => 'emerald-falcons',
-            'violet vipers' => 'violet-vipers',
-            'silver stallions' => 'silver-stallions',
-            'copper cobras' => 'copper-cobras',
-            'neon nighthawks' => 'neon-nighthawks',
-            'royal raptors' => 'royal-raptors',
-            'plasma phoenix' => 'plasma-phoenix',
-            'quantum quakes' => 'quantum-quakes',
-            'mystic meteors' => 'mystic-meteors',
-            'rift runners' => 'rift-runners',
-            'nova nomads' => 'nova-nomads',
-            'zenith zephyrs' => 'zenith-zephyrs',
-        ];
-
-        if (isset($replacements[$name])) {
-            return $replacements[$name];
-        }
-
-        // Default: replace spaces with hyphens
-        return str_replace(' ', '-', $name);
-    }
-    
-    /**
-     * Check if team has a custom logo URL
-     */
-    public function hasCustomLogo(): bool
-    {
-        return !empty($this->attributes['logo_url']);
-    }
-
     public function homeMatches()
     {
-        return $this->hasMany(FootballMatch::class, 'home_team_id', '_id');
+        return $this->hasMany(FootballMatch::class, 'home_team_id');
     }
 
+    /**
+     * Get all away matches for this team.
+     */
     public function awayMatches()
     {
-        return $this->hasMany(FootballMatch::class, 'away_team_id', '_id');
+        return $this->hasMany(FootballMatch::class, 'away_team_id');
     }
 
+    /**
+     * Get all matches (home and away) for this team.
+     */
     public function matches()
     {
-        return $this->homeMatches()->union($this->awayMatches());
+        return FootballMatch::where('home_team_id', $this->id)
+            ->orWhere('away_team_id', $this->id);
+    }
+
+    /**
+     * Get users who have this as their favorite team.
+     */
+    public function favoritedByUsers()
+    {
+        return $this->hasMany(User::class, 'favorite_team_id');
+    }
+
+    /**
+     * Get the team's logo URL with fallback.
+     */
+    public function getLogoAttribute()
+    {
+        return $this->logo_url ?: '/images/teams/default.png';
+    }
+
+    /**
+     * Scope to get only active teams.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('active', true);
     }
 }

@@ -1,49 +1,39 @@
 <?php
 
-use App\Http\Controllers\BettingController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\LeaderboardController;
-use App\Http\Controllers\MatchController;
-use App\Http\Controllers\TeamController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
+use App\Livewire\Home;
+use App\Livewire\Auth\Login;
+use App\Livewire\Auth\Register;
+use App\Livewire\LeagueTable;
+use App\Livewire\Dashboard;
+use App\Livewire\FixturesAndResults;
+use App\Livewire\BettingHistory;
+use App\Livewire\LiveMatches;
+use App\Livewire\IndividualMatch;
 
-Route::get('/', function () {
-    return Inertia::render('welcome');
-})->name('home');
+// Public routes (accessible to everyone)
+Route::get('/', Home::class)->name('home');
+Route::get('/league-table', LeagueTable::class)->name('league-table');
+Route::get('/fixtures-and-results', FixturesAndResults::class)->name('fixtures-and-results');
+Route::get('/live-matches', LiveMatches::class)->name('live-matches');
+Route::get('/match/{matchId}', IndividualMatch::class)->name('individual-match');
+Route::get('/login', Login::class)->name('login')->middleware('guest');
+Route::get('/register', Register::class)->name('register')->middleware('guest');
 
-Route::get('/about', function () {
-    return Inertia::render('about');
-})->name('about');
+// Protected routes (auth required)
+Route::middleware('auth')->group(function () {
+    // Dashboard - User's personal betting hub
+    Route::get('/dashboard', Dashboard::class)->name('dashboard');
 
-Route::get('/age-verification', function() {
-    return Inertia::render('auth/age-verification');
-})->name('age-verification')->middleware('auth');
+    // Betting History - User's bet tracking
+    Route::get('/betting-history', BettingHistory::class)->name('betting-history');
 
-// Public routes (matches are integrated into betting page)
-Route::get('/leaderboard', [LeaderboardController::class, 'index'])->name('leaderboard.index');
-Route::get('/teams', [TeamController::class, 'index'])->name('teams.index');
-
-// API routes for public data
-Route::prefix('api')->group(function () {
-    Route::get('/matches/upcoming', [MatchController::class, 'upcoming']);
-    Route::get('/matches/live', [MatchController::class, 'live']);
-    Route::get('/leaderboard', [LeaderboardController::class, 'api']);
+    // Logout route
+    Route::post('/logout', function () {
+        Auth::logout();
+        session()->invalidate();
+        session()->regenerateToken();
+        return redirect('/');
+    })->name('logout');
 });
-
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('api/dashboard/stats', [DashboardController::class, 'stats']);
-});
-
-Route::middleware(['auth', 'verified', 'adult'])->group(function () {
-    // Betting routes
-    Route::get('/betting', [BettingController::class, 'index'])->name('betting.index');
-    Route::post('/betting', [BettingController::class, 'store'])->name('betting.store');
-    Route::put('/betting/{bet}', [BettingController::class, 'update'])->name('betting.update');
-    Route::delete('/betting/{bet}', [BettingController::class, 'destroy'])->name('betting.destroy');
-    Route::get('/my-bets', [BettingController::class, 'myBets'])->name('betting.myBets');
-});
-
-require __DIR__.'/settings.php';
-require __DIR__.'/auth.php';

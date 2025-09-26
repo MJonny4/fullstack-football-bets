@@ -4,17 +4,13 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Str;
-use MongoDB\Laravel\Auth\User as Authenticatable;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
-
-    protected $connection = 'mongodb';
-    protected $collection = 'users';
 
     /**
      * The attributes that are mass assignable.
@@ -26,6 +22,13 @@ class User extends Authenticatable
         'email',
         'password',
         'date_of_birth',
+        'virtual_balance',
+        'country',
+        'timezone',
+        'favorite_team_id',
+        'total_bets_placed',
+        'total_winnings',
+        'last_login_at',
     ];
 
     /**
@@ -39,15 +42,6 @@ class User extends Authenticatable
     ];
 
     /**
-     * The accessors to append to the model's array form.
-     *
-     * @var list<string>
-     */
-    protected $appends = [
-        'age',
-    ];
-
-    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -58,45 +52,45 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'date_of_birth' => 'date',
+            'virtual_balance' => 'decimal:2',
+            'total_winnings' => 'decimal:2',
+            'last_login_at' => 'datetime',
         ];
     }
 
     /**
-     * Get the user's initials
+     * Get the user's favorite team.
      */
-    public function initials(): string
+    public function favoriteTeam()
     {
-        return Str::of($this->name)
-            ->explode(' ')
-            ->take(2)
-            ->map(fn ($word) => Str::substr($word, 0, 1))
-            ->implode('');
+        return $this->belongsTo(Team::class, 'favorite_team_id');
     }
 
     /**
-     * Get the user's age in years
+     * Get all bets placed by this user.
      */
-    public function getAgeAttribute(): ?int
-    {
-        if (!$this->date_of_birth) {
-            return null;
-        }
-
-        return $this->date_of_birth->diffInYears(now());
-    }
-    
     public function bets()
     {
-        return $this->hasMany(Bet::class, 'user_id', '_id');
+        return $this->hasMany(Bet::class);
     }
 
-    public function userStats()
+    /**
+     * Boot the model.
+     */
+    protected static function boot()
     {
-        return $this->hasMany(UserStats::class, 'user_id', '_id');
-    }
+        parent::boot();
 
-    public function leagueMemberships()
-    {
-        return $this->hasMany(LeagueMembership::class, 'user_id', '_id');
+        static::creating(function ($user) {
+            if (empty($user->virtual_balance)) {
+                $user->virtual_balance = 1000.00; // Starting virtual money
+            }
+            if (empty($user->country)) {
+                $user->country = 'ES'; // Default to Spain
+            }
+            if (empty($user->timezone)) {
+                $user->timezone = 'Europe/Madrid'; // Spanish timezone
+            }
+        });
     }
 }
