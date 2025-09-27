@@ -16,6 +16,9 @@ class BetModal extends Component
     public $betAmount = 10.00;
     public $potentialWinnings = 0;
     public $userBalance = 0;
+    public $netProfit = 0;
+    public $maxBetForBalance = 0;
+    public $showAdvancedCalculations = false;
 
     // Betting constraints
     public const MIN_BET_AMOUNT = 5.00;
@@ -87,15 +90,20 @@ class BetModal extends Component
     }
 
     /**
-     * Calculate potential winnings based on bet amount and odds
+     * Calculate potential winnings and advanced calculations
      */
     private function calculatePotentialWinnings()
     {
         if ($this->betAmount && $this->odds) {
             $this->potentialWinnings = $this->betAmount * $this->odds;
+            $this->netProfit = $this->potentialWinnings - $this->betAmount;
         } else {
             $this->potentialWinnings = 0;
+            $this->netProfit = 0;
         }
+
+        // Calculate maximum bet for current balance
+        $this->maxBetForBalance = min($this->userBalance, self::MAX_BET_AMOUNT);
     }
 
     /**
@@ -205,6 +213,91 @@ class BetModal extends Component
     {
         $this->betAmount = $amount;
         $this->calculatePotentialWinnings();
+    }
+
+    /**
+     * Set maximum possible bet for user's balance
+     */
+    public function setMaxBet()
+    {
+        $this->betAmount = $this->maxBetForBalance;
+        $this->calculatePotentialWinnings();
+    }
+
+    /**
+     * Toggle advanced calculations display
+     */
+    public function toggleAdvancedCalculations()
+    {
+        $this->showAdvancedCalculations = !$this->showAdvancedCalculations;
+    }
+
+    /**
+     * Get probability percentage based on odds
+     */
+    public function getImpliedProbability()
+    {
+        if (!$this->odds || $this->odds <= 0) return 0;
+        return round((1 / $this->odds) * 100, 1);
+    }
+
+    /**
+     * Get user's betting statistics for this session
+     */
+    public function getUserBettingStats()
+    {
+        if (!Auth::check()) return null;
+
+        $user = Auth::user();
+        $recentBets = $user->bets()->orderBy('created_at', 'desc')->limit(10)->get();
+
+        return [
+            'total_bets_today' => $user->bets()->whereDate('created_at', today())->count(),
+            'wagered_today' => $user->bets()->whereDate('created_at', today())->sum('amount'),
+            'recent_streak' => $this->calculateRecentStreak($recentBets),
+            'favorite_bet_type' => $this->getFavoriteBetType($user),
+        ];
+    }
+
+    /**
+     * Calculate recent betting streak
+     */
+    private function calculateRecentStreak($recentBets)
+    {
+        $streak = 0;
+        $lastResult = null;
+
+        foreach ($recentBets as $bet) {
+            if ($bet->status === 'pending') continue;
+
+            if ($lastResult === null) {
+                $lastResult = $bet->status;
+                $streak = 1;
+            } elseif ($bet->status === $lastResult) {
+                $streak++;
+            } else {
+                break;
+            }
+        }
+
+        return [
+            'count' => $streak,
+            'type' => $lastResult,
+        ];
+    }
+
+    /**
+     * Get user's most frequent bet type
+     */
+    private function getFavoriteBetType($user)
+    {
+        $betTypes = $user->bets()
+            ->selectRaw('bet_type, COUNT(*) as count')
+            ->groupBy('bet_type')
+            ->orderBy('count', 'desc')
+            ->first();
+
+        return $betTypes ? $betTypes->bet_type : null;
     }
 
     public function render()

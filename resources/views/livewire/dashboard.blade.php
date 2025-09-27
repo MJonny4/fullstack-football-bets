@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-gray-50">
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
     <!-- Professional Navigation -->
     <x-navigation />
 
@@ -12,22 +12,22 @@
                 </div>
                 <div class="mt-4 lg:mt-0 flex items-center space-x-4">
                     <!-- Period Selector -->
-                    <div class="bg-white/20 backdrop-blur-sm rounded-lg p-1">
+                    <div class="bg-white dark:bg-gray-800/20 backdrop-blur-sm rounded-lg p-1">
                         <button
                             wire:click="changePeriod('week')"
-                            class="px-3 py-1 text-sm rounded {{ $selectedPeriod === 'week' ? 'bg-white text-th-blue' : 'text-white hover:bg-white/20' }} transition-colors"
+                            class="px-3 py-1 text-sm rounded {{ $selectedPeriod === 'week' ? 'bg-white dark:bg-gray-800 text-th-blue' : 'text-white hover:bg-white dark:bg-gray-800/20' }} transition-colors"
                         >
                             Week
                         </button>
                         <button
                             wire:click="changePeriod('month')"
-                            class="px-3 py-1 text-sm rounded {{ $selectedPeriod === 'month' ? 'bg-white text-th-blue' : 'text-white hover:bg-white/20' }} transition-colors"
+                            class="px-3 py-1 text-sm rounded {{ $selectedPeriod === 'month' ? 'bg-white dark:bg-gray-800 text-th-blue' : 'text-white hover:bg-white dark:bg-gray-800/20' }} transition-colors"
                         >
                             Month
                         </button>
                         <button
                             wire:click="changePeriod('all')"
-                            class="px-3 py-1 text-sm rounded {{ $selectedPeriod === 'all' ? 'bg-white text-th-blue' : 'text-white hover:bg-white/20' }} transition-colors"
+                            class="px-3 py-1 text-sm rounded {{ $selectedPeriod === 'all' ? 'bg-white dark:bg-gray-800 text-th-blue' : 'text-white hover:bg-white dark:bg-gray-800/20' }} transition-colors"
                         >
                             All Time
                         </button>
@@ -35,7 +35,7 @@
                     <!-- Refresh Button -->
                     <button
                         wire:click="refreshStats"
-                        class="bg-white/20 hover:bg-white/30 backdrop-blur-sm px-4 py-2 rounded-lg font-medium transition-colors flex items-center"
+                        class="bg-white dark:bg-gray-800/20 hover:bg-white dark:bg-gray-800/30 backdrop-blur-sm px-4 py-2 rounded-lg font-medium transition-colors flex items-center"
                     >
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
@@ -52,11 +52,11 @@
         <!-- KPI Cards Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
             @foreach($kpiCards as $card)
-                <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-gray-100">
+                <div class="bg-white dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-gray-100">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-gray-600 text-sm font-medium">{{ $card['title'] }}</p>
-                            <p class="text-2xl font-bold text-gray-900 mt-1">{{ $card['value'] }}</p>
+                            <p class="text-gray-600 dark:text-gray-400 text-sm font-medium">{{ $card['title'] }}</p>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{{ $card['value'] }}</p>
                         </div>
                         <div class="text-3xl">{{ $card['icon'] }}</div>
                     </div>
@@ -65,11 +65,11 @@
                             <span class="text-{{ $card['color'] }}-600 font-medium text-sm">
                                 {{ $card['change'] >= 0 ? '+' : '' }}€{{ number_format($card['change'], 2) }}
                             </span>
-                            <span class="text-gray-500 text-sm ml-2">{{ $card['change_label'] }}</span>
+                            <span class="text-gray-500 dark:text-gray-400 text-sm ml-2">{{ $card['change_label'] }}</span>
                         </div>
                     @else
                         <div class="mt-3">
-                            <span class="text-gray-500 text-sm">{{ $card['change_label'] }}</span>
+                            <span class="text-gray-500 dark:text-gray-400 text-sm">{{ $card['change_label'] }}</span>
                         </div>
                     @endif
                 </div>
@@ -82,8 +82,8 @@
                 <!-- Current Streak & Achievements -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Current Streak -->
-                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6">
-                        <h3 class="text-lg font-bold text-gray-900 mb-4">Current Streak</h3>
+                    <div class="bg-white dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl p-6">
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Current Streak</h3>
                         <div class="text-center">
                             @if($currentStreak['type'] === 'winning')
                                 <div class="text-4xl mb-2">🔥</div>
@@ -95,29 +95,29 @@
                                 <div class="text-red-700 font-medium">Loss Streak</div>
                             @else
                                 <div class="text-4xl mb-2">⚡</div>
-                                <div class="text-3xl font-bold text-gray-600">0</div>
-                                <div class="text-gray-700 font-medium">No Active Streak</div>
+                                <div class="text-3xl font-bold text-gray-600 dark:text-gray-400">0</div>
+                                <div class="text-gray-700 dark:text-gray-300 font-medium">No Active Streak</div>
                             @endif
                         </div>
                     </div>
 
                     <!-- Quick Achievements -->
-                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6">
-                        <h3 class="text-lg font-bold text-gray-900 mb-4">Achievements</h3>
+                    <div class="bg-white dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl p-6">
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Achievements</h3>
                         @if(count($achievements) > 0)
                             <div class="space-y-3">
                                 @foreach(array_slice($achievements, 0, 3) as $achievement)
                                     <div class="flex items-center">
                                         <span class="text-2xl mr-3">{{ $achievement['icon'] }}</span>
                                         <div>
-                                            <div class="font-medium text-gray-900">{{ $achievement['name'] }}</div>
-                                            <div class="text-sm text-gray-600">{{ $achievement['description'] }}</div>
+                                            <div class="font-medium text-gray-900 dark:text-gray-100">{{ $achievement['name'] }}</div>
+                                            <div class="text-sm text-gray-600 dark:text-gray-400">{{ $achievement['description'] }}</div>
                                         </div>
                                     </div>
                                 @endforeach
                             </div>
                         @else
-                            <div class="text-center text-gray-500">
+                            <div class="text-center text-gray-500 dark:text-gray-400">
                                 <div class="text-4xl mb-2">🏆</div>
                                 <p>Start betting to unlock achievements!</p>
                             </div>
@@ -126,9 +126,9 @@
                 </div>
 
                 <!-- Recent Betting Activity -->
-                <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6">
+                <div class="bg-white dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl p-6">
                     <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-lg font-bold text-gray-900">Recent Betting Activity</h3>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">Recent Betting Activity</h3>
                         <a href="#" class="text-th-blue hover:text-th-red font-medium text-sm transition-colors">View All</a>
                     </div>
 
@@ -137,16 +137,16 @@
                             @foreach($recentBets as $bet)
                                 <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                                     <div class="flex-1">
-                                        <div class="font-medium text-gray-900">{{ $bet['match'] }}</div>
-                                        <div class="text-sm text-gray-600">
+                                        <div class="font-medium text-gray-900 dark:text-gray-100">{{ $bet['match'] }}</div>
+                                        <div class="text-sm text-gray-600 dark:text-gray-400">
                                             {{ $bet['bet_type'] }} • Odds: {{ $bet['odds'] }} • {{ $bet['gameweek'] }}
                                         </div>
-                                        <div class="text-xs text-gray-500 mt-1">
+                                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                             {{ Carbon\Carbon::parse($bet['created_at'])->diffForHumans() }}
                                         </div>
                                     </div>
                                     <div class="text-right">
-                                        <div class="font-bold text-gray-900">€{{ number_format($bet['amount'], 2) }}</div>
+                                        <div class="font-bold text-gray-900 dark:text-gray-100">€{{ number_format($bet['amount'], 2) }}</div>
                                         @if($bet['status'] === 'settled')
                                             <div class="text-sm font-medium {{ $bet['result'] === 'won' ? 'text-green-600' : 'text-red-600' }}">
                                                 {{ $bet['result'] === 'won' ? '+€' . number_format($bet['actual_winnings'], 2) : 'Lost' }}
@@ -159,7 +159,7 @@
                             @endforeach
                         </div>
                     @else
-                        <div class="text-center text-gray-500 py-8">
+                        <div class="text-center text-gray-500 dark:text-gray-400 py-8">
                             <div class="text-4xl mb-2">🎲</div>
                             <p class="font-medium">No betting activity yet</p>
                             <p class="text-sm">Place your first bet to get started!</p>
@@ -169,18 +169,18 @@
 
                 <!-- Upcoming Betting Opportunities -->
                 @if($upcomingMatches && $upcomingMatches->count() > 0)
-                <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6">
+                <div class="bg-white dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl p-6">
                     <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-lg font-bold text-gray-900">Upcoming Betting Opportunities</h3>
-                        <span class="text-sm text-gray-600">{{ $upcomingMatches->count() }} matches available</span>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">Upcoming Betting Opportunities</h3>
+                        <span class="text-sm text-gray-600 dark:text-gray-400">{{ $upcomingMatches->count() }} matches available</span>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         @foreach($upcomingMatches->take(4) as $match)
-                            <div class="p-4 border border-gray-200 rounded-xl hover:border-th-blue transition-colors">
+                            <div class="p-4 border border-gray-200 dark:border-gray-600 rounded-xl hover:border-th-blue transition-colors">
                                 <div class="flex items-center justify-between mb-2">
-                                    <div class="text-sm text-gray-600">{{ $match['gameweek'] }}</div>
-                                    <div class="text-sm font-medium text-gray-900">{{ Carbon\Carbon::parse($match['kickoff_time'])->format('M d, H:i') }}</div>
+                                    <div class="text-sm text-gray-600 dark:text-gray-400">{{ $match['gameweek'] }}</div>
+                                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ Carbon\Carbon::parse($match['kickoff_time'])->format('M d, H:i') }}</div>
                                 </div>
                                 <div class="flex items-center justify-center space-x-4 mb-3">
                                     <div class="text-center">
@@ -200,7 +200,7 @@
                                         <span class="bg-th-red/10 text-th-red px-2 py-1 rounded">{{ $match['odds']['away_odds'] }}</span>
                                     </div>
                                 @else
-                                    <div class="text-center text-xs text-gray-500">Betting Closed</div>
+                                    <div class="text-center text-xs text-gray-500 dark:text-gray-400">Betting Closed</div>
                                 @endif
                             </div>
                         @endforeach
@@ -212,8 +212,8 @@
             <!-- Sidebar (1/3 width) -->
             <div class="space-y-6">
                 <!-- Favorite Teams -->
-                <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4">Your Top Teams</h3>
+                <div class="bg-white dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl p-6">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Your Top Teams</h3>
                     @if($topTeams->count() > 0)
                         <div class="space-y-4">
                             @foreach($topTeams as $team)
@@ -227,20 +227,20 @@
                                         >
                                         <div>
                                             <div class="font-medium text-sm">{{ Str::limit($team['team']['name'], 15) }}</div>
-                                            <div class="text-xs text-gray-500">{{ $team['total_bets'] }} bets</div>
+                                            <div class="text-xs text-gray-500 dark:text-gray-400">{{ $team['total_bets'] }} bets</div>
                                         </div>
                                     </div>
                                     <div class="text-right">
                                         <div class="text-sm font-bold {{ $team['win_rate'] >= 50 ? 'text-green-600' : 'text-red-600' }}">
                                             {{ $team['win_rate'] }}%
                                         </div>
-                                        <div class="text-xs text-gray-500">win rate</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">win rate</div>
                                     </div>
                                 </div>
                             @endforeach
                         </div>
                     @else
-                        <div class="text-center text-gray-500">
+                        <div class="text-center text-gray-500 dark:text-gray-400">
                             <div class="flex justify-center mb-2">
                                 <img src="{{ asset('images/goalguessers.png') }}" alt="GoalGuessers Logo" class="w-8 h-8 object-contain opacity-50">
                             </div>
@@ -250,18 +250,18 @@
                 </div>
 
                 <!-- Quick Stats -->
-                <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4">Quick Stats</h3>
+                <div class="bg-white dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl p-6">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Quick Stats</h3>
                     <div class="space-y-3">
                         @php
                             $performance = $stats['betting_performance'] ?? [];
                         @endphp
                         <div class="flex justify-between">
-                            <span class="text-gray-600">Best Winning Streak</span>
+                            <span class="text-gray-600 dark:text-gray-400">Best Winning Streak</span>
                             <span class="font-medium">{{ $performance['best_winning_streak'] ?? 0 }}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-gray-600">Biggest Win</span>
+                            <span class="text-gray-600 dark:text-gray-400">Biggest Win</span>
                             <span class="font-medium text-green-600">
                                 @if(isset($performance['biggest_win']))
                                     €{{ number_format($performance['biggest_win']['amount'], 2) }}
@@ -271,7 +271,7 @@
                             </span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-gray-600">Most Bet Type</span>
+                            <span class="text-gray-600 dark:text-gray-400">Most Bet Type</span>
                             <span class="font-medium">
                                 @php
                                     $byType = $performance['by_bet_type'] ?? [];
@@ -281,7 +281,7 @@
                             </span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-gray-600">This Week</span>
+                            <span class="text-gray-600 dark:text-gray-400">This Week</span>
                             <span class="font-medium">
                                 @php
                                     $thisWeek = collect($performance['weekly_performance'] ?? [])->last();
@@ -293,10 +293,10 @@
                 </div>
 
                 <!-- Balance Trend -->
-                <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4">Balance Trend</h3>
+                <div class="bg-white dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl p-6">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Balance Trend</h3>
                     <div class="text-center">
-                        <div class="text-3xl font-bold text-gray-900 mb-1">
+                        <div class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1">
                             €{{ number_format($user->virtual_balance ?? 0, 2) }}
                         </div>
                         @php
@@ -314,7 +314,7 @@
                                 @endphp
                                 <div class="h-2 {{ $currentBalance >= $startingBalance ? 'bg-green-500' : 'bg-red-500' }} rounded-full transition-all duration-300" style="width: {{ $progress }}%"></div>
                             </div>
-                            <div class="text-xs text-gray-500 mt-1">
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                 {{ $progress >= 100 ? 'Above' : 'Below' }} starting balance (€1,000)
                             </div>
                         </div>

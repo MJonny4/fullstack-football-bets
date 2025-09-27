@@ -5,233 +5,278 @@
     $navState = NavigationService::getNavigationState($currentRoute);
     $nav = $navState['navigation'];
     $bettingStatus = $navState['betting_status'];
+    $timeInfo = $navState['time_info'];
 @endphp
 
-<nav class="shadow-lg bg-gradient-to-br from-th-red to-th-blue">
+<nav class="shadow-lg bg-gradient-to-br from-th-red to-th-blue relative z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
             <!-- Logo -->
             <div class="flex items-center">
                 <a href="{{ route('home') }}" class="flex items-center text-white font-bold text-xl hover:text-gray-200 transition-colors">
                     <img src="{{ asset('images/goalguessers.png') }}" alt="GoalGuessers Logo" class="w-8 h-8 mr-2 object-contain">
-                    GoalGuessers
+                    <span class="hidden sm:block">GoalGuessers</span>
                 </a>
             </div>
 
-            <!-- Desktop Navigation Links -->
-            <div class="hidden lg:block">
-                <div class="ml-10 flex items-baseline space-x-4">
-                    {{-- Public Navigation --}}
-                    @foreach($nav['public'] as $item)
-                        <a
-                            href="{{ $item['placeholder'] ?? false ? '#' : route($item['route']) }}"
-                            class="text-white px-3 py-2 rounded-md text-sm font-medium transition-colors
-                                {{ in_array($currentRoute, $item['active_routes']) ? 'bg-white/20 hover:bg-white/30' : 'hover:bg-white/20' }}
-                                {{ $item['placeholder'] ?? false ? 'opacity-75 cursor-not-allowed' : '' }}"
-                            {{ $item['placeholder'] ?? false ? 'onclick="event.preventDefault(); showComingSoon()"' : '' }}
-                        >
-                            <span class="mr-1">{{ $item['icon'] }}</span>
-                            {{ $item['name'] }}
-                        </a>
-                    @endforeach
-
-                    {{-- Authenticated Navigation --}}
-                    @auth
-                        @foreach($nav['authenticated'] as $item)
-                            <a
-                                href="{{ $item['placeholder'] ?? false ? '#' : route($item['route']) }}"
-                                class="text-white px-3 py-2 rounded-md text-sm font-medium transition-colors relative
-                                    {{ in_array($currentRoute, $item['active_routes']) ? 'bg-white/20 hover:bg-white/30' : 'hover:bg-white/20' }}
-                                    {{ $item['placeholder'] ?? false ? 'opacity-75' : '' }}
-                                    {{ $item['highlight'] ?? false ? 'bg-green-500/20 hover:bg-green-500/30 border border-green-400/30' : '' }}"
-                                {{ $item['placeholder'] ?? false ? 'onclick="event.preventDefault(); showComingSoon()"' : '' }}
-                            >
+            <!-- Main Navigation (Centered) -->
+            <div class="hidden lg:flex items-center space-x-1">
+                @foreach($nav['public'] as $item)
+                    @if(isset($item['dropdown']) && $item['dropdown'])
+                        <!-- Dropdown Navigation Item -->
+                        <div class="relative group">
+                            <button class="text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center
+                                {{ in_array($currentRoute, $item['active_routes']) ? 'bg-white/20' : 'hover:bg-white/20' }}">
                                 <span class="mr-1">{{ $item['icon'] }}</span>
                                 {{ $item['name'] }}
-                                @if($item['highlight'] ?? false)
-                                    <span class="absolute -top-1 -right-1 bg-green-400 text-xs text-white px-1 rounded-full animate-pulse">
-                                        ●
-                                    </span>
-                                @endif
-                            </a>
-                        @endforeach
-                    @endauth
+                                <svg class="ml-1 w-4 h-4 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
 
-                    {{-- Conditional Navigation --}}
-                    @foreach($nav['conditional'] as $item)
-                        <a
-                            href="{{ $item['placeholder'] ?? false ? '#' : route($item['route']) }}"
-                            class="text-white px-3 py-2 rounded-md text-sm font-medium transition-colors relative
-                                {{ in_array($currentRoute, $item['active_routes']) ? 'bg-white/20 hover:bg-white/30' : 'hover:bg-white/20' }}
-                                {{ $item['placeholder'] ?? false ? 'opacity-75' : '' }}
-                                {{ isset($item['badge']) ? 'pr-8' : '' }}"
-                            {{ $item['placeholder'] ?? false ? 'onclick="event.preventDefault(); showComingSoon()"' : '' }}
-                        >
+                            <!-- Dropdown Menu -->
+                            <div class="absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                                <div class="py-1">
+                                    @foreach($item['items'] as $subItem)
+                                        @if($subItem === 'separator')
+                                            <div class="border-t border-gray-200 dark:border-gray-600 my-1"></div>
+                                        @else
+                                            @php
+                                                $showItem = true;
+                                                if (isset($subItem['auth_required']) && !auth()->check()) {
+                                                    $showItem = false;
+                                                }
+                                                if (isset($subItem['show_when_live']) && !$timeInfo['is_match_time']) {
+                                                    $showItem = false;
+                                                }
+                                            @endphp
+
+                                            @if($showItem)
+                                                <a href="{{ route($subItem['route']) }}"
+                                                   class="group flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 transition-colors
+                                                   {{ in_array($currentRoute, $subItem['active_routes']) ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100' : '' }}">
+                                                    <span class="mr-3">{{ $subItem['icon'] }}</span>
+                                                    {{ $subItem['name'] }}
+                                                    @if(isset($subItem['show_when_live']) && $timeInfo['is_match_time'])
+                                                        <span class="ml-auto">
+                                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 animate-pulse">
+                                                                LIVE
+                                                            </span>
+                                                        </span>
+                                                    @endif
+                                                </a>
+                                            @endif
+                                        @endif
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    @else
+                        <!-- Regular Navigation Item -->
+                        <a href="{{ route($item['route']) }}"
+                           class="text-white px-4 py-2 rounded-md text-sm font-medium transition-colors
+                           {{ in_array($currentRoute, $item['active_routes']) ? 'bg-white/20' : 'hover:bg-white/20' }}">
                             <span class="mr-1">{{ $item['icon'] }}</span>
                             {{ $item['name'] }}
-                            @if(isset($item['badge']))
-                                <span class="absolute -top-1 -right-1 {{ $item['badge_class'] ?? 'bg-red-500 text-white' }} text-xs px-1 rounded-full text-[10px] font-bold">
-                                    {{ $item['badge'] }}
-                                </span>
-                            @endif
-                            @if($item['coming_soon'] ?? false)
-                                <span class="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] px-1 rounded-full font-bold">
-                                    SOON
-                                </span>
-                            @endif
                         </a>
-                    @endforeach
-                </div>
+                    @endif
+                @endforeach
             </div>
 
-            <!-- Mobile menu button -->
-            <div class="lg:hidden">
+            <!-- Right Side - User Menu / Auth -->
+            <div class="flex items-center space-x-4">
+                <!-- Theme Toggle -->
+                <x-theme-toggle />
+
+                @auth
+                    <!-- User Balance (Desktop) -->
+                    <div class="hidden lg:flex items-center text-white text-sm">
+                        <span class="bg-white/20 px-3 py-1 rounded-full">
+                            💰 €{{ number_format(auth()->user()->virtual_balance, 2) }}
+                        </span>
+                    </div>
+
+                    <!-- User Dropdown -->
+                    @foreach($nav['authenticated'] as $item)
+                        @if(isset($item['user_dropdown']) && $item['user_dropdown'])
+                            <div class="relative group">
+                                <button class="flex items-center text-white px-3 py-2 rounded-md text-sm font-medium transition-colors hover:bg-white/20
+                                    {{ in_array($currentRoute, $item['active_routes']) ? 'bg-white/20' : '' }}">
+                                    <span class="mr-1">{{ $item['icon'] }}</span>
+                                    <span class="hidden sm:block mr-1">{{ auth()->user()->name }}</span>
+                                    <svg class="w-4 h-4 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </button>
+
+                                <!-- User Dropdown Menu -->
+                                <div class="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                                    <div class="py-1">
+                                        <!-- User Info Header -->
+                                        <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-600">
+                                            <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ auth()->user()->name }}</p>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">Balance: €{{ number_format(auth()->user()->virtual_balance, 2) }}</p>
+                                        </div>
+
+                                        @foreach($item['items'] as $subItem)
+                                            @if($subItem === 'separator')
+                                                <div class="border-t border-gray-200 dark:border-gray-600 my-1"></div>
+                                            @else
+                                                @if(isset($subItem['is_logout']) && $subItem['is_logout'])
+                                                    <form method="POST" action="{{ route('logout') }}">
+                                                        @csrf
+                                                        <button type="submit" class="group flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+                                                            <span class="mr-3">{{ $subItem['icon'] }}</span>
+                                                            {{ $subItem['name'] }}
+                                                        </button>
+                                                    </form>
+                                                @else
+                                                    <a href="{{ route($subItem['route']) }}"
+                                                       class="group flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 transition-colors
+                                                       {{ in_array($currentRoute, $subItem['active_routes']) ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100' : '' }}">
+                                                        <span class="mr-3">{{ $subItem['icon'] }}</span>
+                                                        {{ $subItem['name'] }}
+                                                    </a>
+                                                @endif
+                                            @endif
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                    @endforeach
+                @else
+                    <!-- Login/Register for Guests -->
+                    <div class="hidden sm:flex items-center space-x-2">
+                        <a href="{{ route('login') }}" class="text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-white/20 transition-colors">
+                            Sign In
+                        </a>
+                        <a href="{{ route('register') }}" class="bg-white text-th-blue px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-100 transition-colors">
+                            Get Started
+                        </a>
+                    </div>
+                @endauth
+
+                <!-- Mobile menu button -->
                 <button
                     type="button"
-                    class="text-white hover:text-gray-200 focus:outline-none focus:text-gray-200"
+                    class="lg:hidden inline-flex items-center justify-center p-2 rounded-md text-white hover:bg-white/20 transition-colors"
                     onclick="toggleMobileMenu()"
-                    id="mobile-menu-button"
                 >
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
                 </button>
             </div>
-
-            <!-- User Info / Auth Buttons -->
-            <div class="hidden lg:flex items-center space-x-4">
-                @auth
-                    <!-- Betting Status Indicator -->
-                    @if($bettingStatus['is_open'])
-                        <div class="bg-green-500/20 backdrop-blur-sm rounded-lg px-3 py-1 border border-green-400/30">
-                            <div class="flex items-center text-white text-xs">
-                                <span class="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
-                                <span class="font-medium">Betting Open</span>
-                            </div>
-                            <div class="text-green-200 text-[10px]">
-                                {{ $bettingStatus['message'] }}
-                            </div>
-                        </div>
-                    @else
-                        <div class="bg-red-500/20 backdrop-blur-sm rounded-lg px-3 py-1 border border-red-400/30">
-                            <div class="flex items-center text-white text-xs">
-                                <span class="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
-                                <span class="font-medium">Betting Closed</span>
-                            </div>
-                        </div>
-                    @endif
-
-                    <!-- Virtual Balance -->
-                    <div class="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
-                        <span class="text-white text-sm font-medium">Balance:</span>
-                        <span class="text-white font-bold text-lg">€{{ number_format(auth()->user()->virtual_balance ?? 0, 2) }}</span>
-                    </div>
-
-                    <!-- User Menu -->
-                    <div class="flex items-center space-x-2">
-                        <span class="text-white text-sm">{{ auth()->user()->name }}</span>
-                        <form action="{{ route('logout') }}" method="POST" class="inline">
-                            @csrf
-                            <button type="submit" class="bg-white text-th-red hover:bg-gray-100 px-4 py-2 rounded-lg font-medium transition-colors">
-                                Logout
-                            </button>
-                        </form>
-                    </div>
-                @else
-                    <a href="{{ route('login') }}" class="bg-white text-th-red hover:bg-gray-100 px-4 py-2 rounded-lg font-medium transition-colors">
-                        Login
-                    </a>
-                    <a href="{{ route('register') }}" class="bg-th-red text-white hover:bg-red-700 px-4 py-2 rounded-lg font-medium transition-colors">
-                        Register
-                    </a>
-                @endauth
-            </div>
-        </div>
-
-        <!-- Mobile Navigation Menu (hidden by default) -->
-        <div class="lg:hidden hidden" id="mobile-menu">
-            <div class="px-2 pt-2 pb-3 space-y-1 bg-black/20 backdrop-blur-sm rounded-lg mt-2">
-                {{-- Mobile Public Navigation --}}
-                @foreach($nav['public'] as $item)
-                    <a
-                        href="{{ $item['placeholder'] ?? false ? '#' : route($item['route']) }}"
-                        class="text-white block px-3 py-2 rounded-md text-base font-medium
-                            {{ in_array($currentRoute, $item['active_routes']) ? 'bg-white/20' : 'hover:bg-white/20' }}
-                            {{ $item['placeholder'] ?? false ? 'opacity-75' : '' }}"
-                        {{ $item['placeholder'] ?? false ? 'onclick="event.preventDefault(); showComingSoon()"' : '' }}
-                    >
-                        <span class="mr-2">{{ $item['icon'] }}</span>
-                        {{ $item['name'] }}
-                    </a>
-                @endforeach
-
-                {{-- Mobile Authenticated Navigation --}}
-                @auth
-                    <div class="border-t border-white/10 my-2 pt-2">
-                        @foreach($nav['authenticated'] as $item)
-                            <a
-                                href="{{ $item['placeholder'] ?? false ? '#' : route($item['route']) }}"
-                                class="text-white block px-3 py-2 rounded-md text-base font-medium
-                                    {{ in_array($currentRoute, $item['active_routes']) ? 'bg-white/20' : 'hover:bg-white/20' }}
-                                    {{ $item['placeholder'] ?? false ? 'opacity-75' : '' }}"
-                                {{ $item['placeholder'] ?? false ? 'onclick="event.preventDefault(); showComingSoon()"' : '' }}
-                            >
-                                <span class="mr-2">{{ $item['icon'] }}</span>
-                                {{ $item['name'] }}
-                                @if($item['highlight'] ?? false)
-                                    <span class="ml-2 bg-green-400 text-xs text-black px-1 rounded">NEW</span>
-                                @endif
-                            </a>
-                        @endforeach
-                    </div>
-                @endauth
-
-                {{-- Mobile User Info --}}
-                @auth
-                    <div class="border-t border-white/10 mt-2 pt-2">
-                        <div class="px-3 py-2 text-white text-sm">
-                            <div>{{ auth()->user()->name }}</div>
-                            <div class="text-green-200">€{{ number_format(auth()->user()->virtual_balance ?? 0, 2) }}</div>
-                        </div>
-                        <form action="{{ route('logout') }}" method="POST" class="px-3">
-                            @csrf
-                            <button type="submit" class="w-full bg-white text-th-red hover:bg-gray-100 px-4 py-2 rounded-lg font-medium transition-colors">
-                                Logout
-                            </button>
-                        </form>
-                    </div>
-                @else
-                    <div class="border-t border-white/10 mt-2 pt-2 space-y-2 px-3">
-                        <a href="{{ route('login') }}" class="block w-full text-center bg-white text-th-red hover:bg-gray-100 px-4 py-2 rounded-lg font-medium transition-colors">
-                            Login
-                        </a>
-                        <a href="{{ route('register') }}" class="block w-full text-center bg-th-red text-white hover:bg-red-700 px-4 py-2 rounded-lg font-medium transition-colors">
-                            Register
-                        </a>
-                    </div>
-                @endauth
-            </div>
         </div>
     </div>
+
+    <!-- Mobile menu (hidden by default) -->
+    <div id="mobile-menu" class="lg:hidden hidden bg-gradient-to-b from-th-blue to-th-red border-t border-white/20">
+        <div class="px-2 pt-2 pb-3 space-y-1">
+            @foreach($nav['public'] as $item)
+                @if(isset($item['dropdown']) && $item['dropdown'])
+                    <!-- Mobile Dropdown Header -->
+                    <div class="text-white px-3 py-2 text-sm font-medium">
+                        <span class="mr-1">{{ $item['icon'] }}</span>
+                        {{ $item['name'] }}
+                    </div>
+                    <!-- Mobile Dropdown Items -->
+                    @foreach($item['items'] as $subItem)
+                        @if($subItem !== 'separator')
+                            @php
+                                $showItem = true;
+                                if (isset($subItem['auth_required']) && !auth()->check()) {
+                                    $showItem = false;
+                                }
+                                if (isset($subItem['show_when_live']) && !$timeInfo['is_match_time']) {
+                                    $showItem = false;
+                                }
+                            @endphp
+
+                            @if($showItem)
+                                <a href="{{ route($subItem['route']) }}"
+                                   class="text-white/80 block px-6 py-2 text-sm font-medium hover:bg-white/20 hover:text-white transition-colors
+                                   {{ in_array($currentRoute, $subItem['active_routes']) ? 'bg-white/20 text-white' : '' }}">
+                                    <span class="mr-2">{{ $subItem['icon'] }}</span>
+                                    {{ $subItem['name'] }}
+                                    @if(isset($subItem['show_when_live']) && $timeInfo['is_match_time'])
+                                        <span class="ml-2 text-xs bg-red-500 px-2 py-0.5 rounded">LIVE</span>
+                                    @endif
+                                </a>
+                            @endif
+                        @endif
+                    @endforeach
+                @else
+                    <a href="{{ route($item['route']) }}"
+                       class="text-white block px-3 py-2 text-sm font-medium hover:bg-white/20 transition-colors
+                       {{ in_array($currentRoute, $item['active_routes']) ? 'bg-white/20' : '' }}">
+                        <span class="mr-1">{{ $item['icon'] }}</span>
+                        {{ $item['name'] }}
+                    </a>
+                @endif
+            @endforeach
+
+            @auth
+                <!-- Mobile User Menu -->
+                <div class="border-t border-white/20 mt-4 pt-4">
+                    <div class="text-white px-3 py-2 text-sm">
+                        <div class="font-medium">{{ auth()->user()->name }}</div>
+                        <div class="text-xs text-white/70">€{{ number_format(auth()->user()->virtual_balance, 2) }}</div>
+                    </div>
+                    @foreach($nav['authenticated'] as $item)
+                        @if(isset($item['user_dropdown']))
+                            @foreach($item['items'] as $subItem)
+                                @if($subItem !== 'separator')
+                                    @if(isset($subItem['is_logout']) && $subItem['is_logout'])
+                                        <form method="POST" action="{{ route('logout') }}">
+                                            @csrf
+                                            <button type="submit" class="text-white/80 block w-full text-left px-6 py-2 text-sm font-medium hover:bg-white/20 hover:text-white transition-colors">
+                                                <span class="mr-2">{{ $subItem['icon'] }}</span>
+                                                {{ $subItem['name'] }}
+                                            </button>
+                                        </form>
+                                    @else
+                                        <a href="{{ route($subItem['route']) }}"
+                                           class="text-white/80 block px-6 py-2 text-sm font-medium hover:bg-white/20 hover:text-white transition-colors
+                                           {{ in_array($currentRoute, $subItem['active_routes']) ? 'bg-white/20 text-white' : '' }}">
+                                            <span class="mr-2">{{ $subItem['icon'] }}</span>
+                                            {{ $subItem['name'] }}
+                                        </a>
+                                    @endif
+                                @endif
+                            @endforeach
+                        @endif
+                    @endforeach
+                </div>
+            @else
+                <!-- Mobile Auth Links -->
+                <div class="border-t border-white/20 mt-4 pt-4 space-y-1">
+                    <a href="{{ route('login') }}" class="text-white block px-3 py-2 text-sm font-medium hover:bg-white/20 transition-colors">
+                        Sign In
+                    </a>
+                    <a href="{{ route('register') }}" class="text-white block px-3 py-2 text-sm font-medium hover:bg-white/20 transition-colors">
+                        Get Started - Free €1,000
+                    </a>
+                </div>
+            @endauth
+        </div>
+    </div>
+
+    <script>
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('mobile-menu');
+            const button = event.target.closest('button');
+
+            if (!menu.contains(event.target) && !button?.onclick?.toString().includes('toggleMobileMenu')) {
+                menu.classList.add('hidden');
+            }
+        });
+    </script>
 </nav>
-
-<script>
-function toggleMobileMenu() {
-    const menu = document.getElementById('mobile-menu');
-    menu.classList.toggle('hidden');
-}
-
-function showComingSoon() {
-    alert('🚧 This feature is coming soon!\n\nWe\'re working hard to bring you the best betting experience. Stay tuned!');
-}
-
-// Close mobile menu when clicking outside
-document.addEventListener('click', function(event) {
-    const menu = document.getElementById('mobile-menu');
-    const button = document.getElementById('mobile-menu-button');
-
-    if (!menu.contains(event.target) && !button.contains(event.target)) {
-        menu.classList.add('hidden');
-    }
-});
-</script>

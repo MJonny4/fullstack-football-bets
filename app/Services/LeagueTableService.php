@@ -181,8 +181,8 @@ class LeagueTableService
             ->where('form', '!=', '')
             ->orderByRaw('
                 (LENGTH(form) - LENGTH(REPLACE(form, "W", ""))) * 3 +
-                (LENGTH(form) - LENGTH(REPLACE(form, "D", ""))) * 1
-            ', 'DESC')
+                (LENGTH(form) - LENGTH(REPLACE(form, "D", ""))) * 1 DESC
+            ')
             ->with('team')
             ->get();
     }

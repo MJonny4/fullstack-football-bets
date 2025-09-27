@@ -2,7 +2,7 @@
     <div class="max-w-md w-full space-y-8">
         <!-- Logo and Header -->
         <div class="text-center">
-            <div class="mx-auto h-16 w-16 flex items-center justify-center bg-white rounded-full shadow-lg overflow-hidden">
+            <div class="mx-auto h-16 w-16 flex items-center justify-center bg-white dark:bg-gray-800 rounded-full shadow-lg overflow-hidden">
                 <img src="{{ asset('images/goalguessers.png') }}" alt="GoalGuessers Logo" class="w-12 h-12 object-contain">
             </div>
             <h2 class="mt-6 text-center text-3xl font-extrabold text-white">
@@ -15,7 +15,7 @@
 
         <!-- Login Form -->
         <form wire:submit="login" class="mt-8 space-y-6">
-            <div class="bg-white/10 backdrop-blur-sm rounded-xl p-8 shadow-xl border border-white/20">
+            <div class="bg-white/10 dark:bg-gray-800/20 backdrop-blur-sm rounded-xl p-8 shadow-xl border border-white/20 dark:border-gray-600/30">
                 <div class="space-y-6">
                     <!-- Email Field -->
                     <div>
@@ -30,7 +30,7 @@
                                 type="email"
                                 autocomplete="email"
                                 required
-                                class="appearance-none relative block w-full px-3 py-3 border border-white/30 placeholder-gray-400 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-th-red focus:border-th-red focus:z-10 sm:text-sm bg-white/90 backdrop-blur-sm"
+                                class="appearance-none relative block w-full px-3 py-3 border border-white/30 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-th-red focus:border-th-red focus:z-10 sm:text-sm bg-white/90 dark:bg-gray-700/90 backdrop-blur-sm"
                                 placeholder="Enter your email"
                             >
                         </div>
@@ -54,7 +54,7 @@
                                 type="password"
                                 autocomplete="current-password"
                                 required
-                                class="appearance-none relative block w-full px-3 py-3 border border-white/30 placeholder-gray-400 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-th-red focus:border-th-red focus:z-10 sm:text-sm bg-white/90 backdrop-blur-sm"
+                                class="appearance-none relative block w-full px-3 py-3 border border-white/30 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-th-red focus:border-th-red focus:z-10 sm:text-sm bg-white/90 dark:bg-gray-700/90 backdrop-blur-sm"
                                 placeholder="Enter your password"
                             >
                         </div>
@@ -73,7 +73,7 @@
                                 id="remember"
                                 name="remember"
                                 type="checkbox"
-                                class="h-4 w-4 text-th-red focus:ring-th-red border-white/30 rounded bg-white/90"
+                                class="h-4 w-4 text-th-red focus:ring-th-red border-white/30 dark:border-gray-600 rounded bg-white/90 dark:bg-gray-700/90"
                             >
                             <label for="remember" class="ml-2 block text-sm text-white">
                                 Remember me

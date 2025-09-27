@@ -28,7 +28,7 @@ class NavigationService
     }
 
     /**
-     * Public navigation items (always visible).
+     * Main navigation structure (always visible).
      */
     private static function getPublicNavigation(): array
     {
@@ -40,74 +40,98 @@ class NavigationService
                 'active_routes' => ['home'],
             ],
             [
-                'name' => 'League Table',
-                'route' => 'league-table',
-                'icon' => '📊',
-                'active_routes' => ['league-table'],
+                'name' => 'Matches',
+                'icon' => '⚽',
+                'dropdown' => true,
+                'active_routes' => ['fixtures-and-results', 'fixtures', 'results', 'live-matches', 'individual-match'],
+                'items' => [
+                    [
+                        'name' => 'Fixtures & Results',
+                        'route' => 'fixtures-and-results',
+                        'icon' => '📅',
+                        'active_routes' => ['fixtures-and-results', 'fixtures', 'results'],
+                    ],
+                    [
+                        'name' => 'Live Matches',
+                        'route' => 'live-matches',
+                        'icon' => '🔴',
+                        'active_routes' => ['live-matches'],
+                        'show_when_live' => true,
+                    ],
+                ],
             ],
             [
-                'name' => 'Fixtures & Results',
-                'route' => 'fixtures-and-results',
-                'icon' => '⚽',
-                'active_routes' => ['fixtures-and-results', 'fixtures', 'results'],
+                'name' => 'League',
+                'icon' => '🏆',
+                'dropdown' => true,
+                'active_routes' => ['league-table', 'leaderboards'],
+                'items' => [
+                    [
+                        'name' => 'League Table',
+                        'route' => 'league-table',
+                        'icon' => '📊',
+                        'active_routes' => ['league-table'],
+                    ],
+                    [
+                        'name' => 'Leaderboards',
+                        'route' => 'leaderboards',
+                        'icon' => '🏅',
+                        'active_routes' => ['leaderboards'],
+                        'auth_required' => true,
+                    ],
+                ],
             ],
             [
                 'name' => 'About',
                 'route' => 'about',
                 'icon' => 'ℹ️',
-                'active_routes' => ['about', 'rules'],
-                'placeholder' => true,
+                'active_routes' => ['about'],
             ],
         ];
     }
 
     /**
-     * Authenticated user navigation items.
+     * User account dropdown items.
      */
     private static function getAuthenticatedNavigation(Carbon $currentTime, ?Gameweek $currentGameweek): array
     {
-        $nav = [
+        return [
             [
-                'name' => 'My Dashboard',
-                'route' => 'dashboard',
-                'icon' => '📈',
-                'active_routes' => ['dashboard'],
-            ],
-            [
-                'name' => 'My Bets',
-                'route' => 'betting-history',
-                'icon' => '🎯',
-                'active_routes' => ['my-bets', 'betting-history'],
-            ],
-            [
-                'name' => 'Leaderboards',
-                'route' => 'leaderboards',
-                'icon' => '🏆',
-                'active_routes' => ['leaderboards'],
-                'placeholder' => true,
-            ],
-            [
-                'name' => 'Profile',
-                'route' => 'profile',
+                'name' => 'My Account',
                 'icon' => '👤',
-                'active_routes' => ['profile', 'settings'],
-                'placeholder' => true,
+                'dropdown' => true,
+                'user_dropdown' => true,
+                'active_routes' => ['dashboard', 'transaction-history', 'betting-history', 'profile'],
+                'items' => [
+                    [
+                        'name' => 'Dashboard',
+                        'route' => 'dashboard',
+                        'icon' => '📈',
+                        'active_routes' => ['dashboard'],
+                    ],
+                    [
+                        'name' => 'Betting & Transactions',
+                        'route' => 'transaction-history',
+                        'icon' => '💰',
+                        'active_routes' => ['my-bets', 'betting-history', 'transaction-history', 'transactions'],
+                    ],
+                    [
+                        'name' => 'Profile Settings',
+                        'route' => 'profile',
+                        'icon' => '⚙️',
+                        'active_routes' => ['profile', 'settings'],
+                    ],
+                    'separator',
+                    [
+                        'name' => 'Logout',
+                        'route' => 'logout',
+                        'icon' => '🚪',
+                        'is_logout' => true,
+                        'method' => 'POST',
+                    ],
+                ],
             ],
         ];
-
-        // Add Place Bets if betting is open
-        if (self::isBettingOpen($currentGameweek)) {
-            array_splice($nav, 1, 0, [[
-                'name' => 'Place Bets',
-                'route' => 'place-bets',
-                'icon' => '💰',
-                'active_routes' => ['place-bets'],
-                'placeholder' => true,
-                'highlight' => true, // Special highlight for betting
-            ]]);
-        }
-
-        return $nav;
     }
 
     /**
@@ -115,33 +139,9 @@ class NavigationService
      */
     private static function getConditionalNavigation(bool $isAuthenticated, Carbon $currentTime, ?Gameweek $currentGameweek): array
     {
-        $conditional = [];
-
-        // Live Matches (only during match hours 13:00-23:00 Spanish time)
-        if (self::isLiveMatchTime($currentTime)) {
-            $conditional[] = [
-                'name' => 'Live Matches',
-                'route' => 'live-matches',
-                'icon' => '🔴',
-                'active_routes' => ['live-matches'],
-                'badge' => 'LIVE',
-                'badge_class' => 'bg-red-500 text-white animate-pulse',
-            ];
-        }
-
-        // Social features (placeholder for future)
-        if ($isAuthenticated) {
-            $conditional[] = [
-                'name' => 'Social',
-                'route' => 'social',
-                'icon' => '👥',
-                'active_routes' => ['social', 'friends'],
-                'placeholder' => true,
-                'coming_soon' => true,
-            ];
-        }
-
-        return $conditional;
+        // Live match status is now handled within the Matches dropdown
+        // Social features planned for future implementation - see TODO.md Section 6
+        return [];
     }
 
     /**

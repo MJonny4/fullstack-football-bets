@@ -38,12 +38,32 @@ class LeagueTable extends Component
             return collect();
         }
 
-        return match ($this->selectedView) {
+        $data = match ($this->selectedView) {
             'home' => $this->getHomeTable(),
             'away' => $this->getAwayTable(),
             'form' => $this->getFormTable(),
             default => $this->getFullTable(),
         };
+
+        // Add consistent position numbers based on overall points
+        return $this->addConsistentPositions($data);
+    }
+
+    private function addConsistentPositions($teams)
+    {
+        // Get the full table ordered by points for consistent positioning
+        $fullTable = $this->getFullTable();
+        $positionMap = [];
+
+        foreach ($fullTable as $index => $team) {
+            $positionMap[$team->team_id] = $index + 1;
+        }
+
+        // Add the consistent position to each team
+        return $teams->map(function ($team) use ($positionMap) {
+            $team->consistent_position = $positionMap[$team->team_id] ?? 1;
+            return $team;
+        });
     }
 
     private function getFullTable()
@@ -222,12 +242,37 @@ class LeagueTable extends Component
         return $html;
     }
 
+    public function getSeasonProgress()
+    {
+        if (!$this->season) {
+            return [
+                'current_gameweek' => 1,
+                'total_gameweeks' => 38,
+                'progress_percentage' => 0
+            ];
+        }
+
+        $currentGameweek = $this->season->gameweeks()
+            ->where('active', true)
+            ->first();
+
+        $totalGameweeks = $this->season->gameweeks()->count();
+        $currentNumber = $currentGameweek?->number ?? 1;
+
+        return [
+            'current_gameweek' => $currentNumber,
+            'total_gameweeks' => $totalGameweeks,
+            'progress_percentage' => round(($currentNumber / $totalGameweeks) * 100, 1)
+        ];
+    }
+
     public function render()
     {
         return view('livewire.league-table', [
             'standings' => $this->getTableData(),
             'topScorers' => $this->getTopScorers(),
             'seasonName' => $this->season?->name ?? 'No Active Season',
+            'seasonProgress' => $this->getSeasonProgress(),
         ])->layout('components.layouts.app', ['title' => 'League Table - GoalGuessers']);
     }
 }

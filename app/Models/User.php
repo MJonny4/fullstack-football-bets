@@ -75,6 +75,40 @@ class User extends Authenticatable
     }
 
     /**
+     * Get all achievements earned by this user.
+     */
+    public function achievements()
+    {
+        return $this->belongsToMany(Achievement::class, 'user_achievements')
+            ->withPivot(['progress_value', 'is_completed', 'completed_at', 'metadata'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Get user achievement records.
+     */
+    public function userAchievements()
+    {
+        return $this->hasMany(UserAchievement::class);
+    }
+
+    /**
+     * Get completed achievements only.
+     */
+    public function completedAchievements()
+    {
+        return $this->achievements()->wherePivot('is_completed', true);
+    }
+
+    /**
+     * Get total achievement points.
+     */
+    public function getTotalAchievementPointsAttribute(): int
+    {
+        return $this->completedAchievements()->sum('points');
+    }
+
+    /**
      * Boot the model.
      */
     protected static function boot()

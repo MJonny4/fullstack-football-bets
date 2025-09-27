@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-gray-50">
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
     <!-- Professional Navigation -->
     <x-navigation />
 
@@ -47,7 +47,7 @@
     <!-- Flash Messages -->
     @if (session()->has('message'))
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg">
+            <div class="bg-green-100 dark:bg-green-800 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-100 px-4 py-3 rounded-lg">
                 {{ session('message') }}
             </div>
         </div>
@@ -55,7 +55,7 @@
 
     @if (session()->has('error'))
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
+            <div class="bg-red-100 dark:bg-red-800 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-100 px-4 py-3 rounded-lg">
                 {{ session('error') }}
             </div>
         </div>
@@ -105,17 +105,17 @@
 
             <!-- Upcoming Matches -->
             <div class="lg:col-span-2">
-                <div class="bg-white rounded-xl shadow-lg">
-                    <div class="p-6 border-b border-gray-200">
-                        <h2 class="text-2xl font-bold text-gray-900">Upcoming Matches</h2>
-                        <p class="text-gray-600">Place your virtual bets now</p>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg transition-colors">
+                    <div class="p-6 border-b border-gray-200 dark:border-gray-600">
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Upcoming Matches</h2>
+                        <p class="text-gray-600 dark:text-gray-400">Place your virtual bets now</p>
                     </div>
 
-                    <div class="divide-y divide-gray-200">
+                    <div class="divide-y divide-gray-200 dark:divide-gray-600">
                         @foreach($upcomingMatches as $match)
-                        <div class="p-6 hover:bg-gray-50 transition-colors">
+                        <div class="p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                             <div class="flex items-center justify-between mb-4">
-                                <div class="text-sm text-gray-500">
+                                <div class="text-sm text-gray-500 dark:text-gray-400">
                                     {{ $match['match_time'] }}
                                 </div>
                                 <div class="flex items-center space-x-2">
@@ -141,17 +141,17 @@
                                         <img src="{{ $match['home_logo'] }}" alt="{{ $match['home_team'] }}" class="w-full h-full object-contain rounded-lg">
                                     </div>
                                     <div>
-                                        <div class="font-semibold text-gray-900">{{ $match['home_team'] }}</div>
-                                        <div class="text-sm text-gray-500">Home</div>
+                                        <div class="font-semibold text-gray-900 dark:text-gray-100">{{ $match['home_team'] }}</div>
+                                        <div class="text-sm text-gray-500 dark:text-gray-400">Home</div>
                                     </div>
                                 </div>
 
-                                <div class="text-2xl font-bold text-gray-400">VS</div>
+                                <div class="text-2xl font-bold text-gray-400 dark:text-gray-500">VS</div>
 
                                 <div class="flex items-center space-x-3">
                                     <div>
-                                        <div class="font-semibold text-gray-900 text-right">{{ $match['away_team'] }}</div>
-                                        <div class="text-sm text-gray-500 text-right">Away</div>
+                                        <div class="font-semibold text-gray-900 dark:text-gray-100 text-right">{{ $match['away_team'] }}</div>
+                                        <div class="text-sm text-gray-500 dark:text-gray-400 text-right">Away</div>
                                     </div>
                                     <div class="w-16 h-16 flex-shrink-0">
                                         <img src="{{ $match['away_logo'] }}" alt="{{ $match['away_team'] }}" class="w-full h-full object-contain rounded-lg">
@@ -164,24 +164,24 @@
                                 <button
                                     wire:click="openBetModal({{ $match['id'] }}, 'home', {{ $match['home_odds'] }})"
                                     @if(!$match['betting_available']) disabled @endif
-                                    class="@if($match['betting_available']) bg-white border-2 border-th-blue text-th-blue hover:bg-th-blue hover:text-white @else bg-gray-200 border-2 border-gray-300 text-gray-500 cursor-not-allowed @endif font-semibold py-3 px-4 rounded-lg transition-all duration-200 @if($match['betting_available']) transform hover:scale-105 @endif">
-                                    <div class="text-xs @if($match['betting_available']) text-gray-500 @else text-gray-400 @endif">HOME WIN</div>
+                                    class="@if($match['betting_available']) bg-white dark:bg-gray-700 border-2 border-th-blue text-th-blue dark:text-blue-400 hover:bg-th-blue hover:text-white dark:hover:bg-blue-600 @else bg-gray-200 dark:bg-gray-600 border-2 border-gray-300 dark:border-gray-500 text-gray-500 dark:text-gray-400 cursor-not-allowed @endif font-semibold py-3 px-4 rounded-lg transition-all duration-200 @if($match['betting_available']) transform hover:scale-105 @endif">
+                                    <div class="text-xs @if($match['betting_available']) text-gray-500 dark:text-gray-300 @else text-gray-400 dark:text-gray-500 @endif">HOME WIN</div>
                                     <div class="text-lg font-bold">{{ $match['home_odds'] }}</div>
                                 </button>
 
                                 <button
                                     wire:click="openBetModal({{ $match['id'] }}, 'draw', {{ $match['draw_odds'] }})"
                                     @if(!$match['betting_available']) disabled @endif
-                                    class="@if($match['betting_available']) bg-white border-2 border-gray-400 text-gray-700 hover:bg-gray-400 hover:text-white @else bg-gray-200 border-2 border-gray-300 text-gray-500 cursor-not-allowed @endif font-semibold py-3 px-4 rounded-lg transition-all duration-200 @if($match['betting_available']) transform hover:scale-105 @endif">
-                                    <div class="text-xs @if($match['betting_available']) text-gray-500 @else text-gray-400 @endif">DRAW</div>
+                                    class="@if($match['betting_available']) bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500 text-gray-700 dark:text-gray-200 hover:bg-gray-400 hover:text-white dark:hover:bg-gray-500 @else bg-gray-200 dark:bg-gray-600 border-2 border-gray-300 dark:border-gray-500 text-gray-500 dark:text-gray-400 cursor-not-allowed @endif font-semibold py-3 px-4 rounded-lg transition-all duration-200 @if($match['betting_available']) transform hover:scale-105 @endif">
+                                    <div class="text-xs @if($match['betting_available']) text-gray-500 dark:text-gray-300 @else text-gray-400 dark:text-gray-500 @endif">DRAW</div>
                                     <div class="text-lg font-bold">{{ $match['draw_odds'] }}</div>
                                 </button>
 
                                 <button
                                     wire:click="openBetModal({{ $match['id'] }}, 'away', {{ $match['away_odds'] }})"
                                     @if(!$match['betting_available']) disabled @endif
-                                    class="@if($match['betting_available']) bg-white border-2 border-th-red text-th-red hover:bg-th-red hover:text-white @else bg-gray-200 border-2 border-gray-300 text-gray-500 cursor-not-allowed @endif font-semibold py-3 px-4 rounded-lg transition-all duration-200 @if($match['betting_available']) transform hover:scale-105 @endif">
-                                    <div class="text-xs @if($match['betting_available']) text-gray-500 @else text-gray-400 @endif">AWAY WIN</div>
+                                    class="@if($match['betting_available']) bg-white dark:bg-gray-700 border-2 border-th-red text-th-red dark:text-red-400 hover:bg-th-red hover:text-white dark:hover:bg-red-600 @else bg-gray-200 dark:bg-gray-600 border-2 border-gray-300 dark:border-gray-500 text-gray-500 dark:text-gray-400 cursor-not-allowed @endif font-semibold py-3 px-4 rounded-lg transition-all duration-200 @if($match['betting_available']) transform hover:scale-105 @endif">
+                                    <div class="text-xs @if($match['betting_available']) text-gray-500 dark:text-gray-300 @else text-gray-400 dark:text-gray-500 @endif">AWAY WIN</div>
                                     <div class="text-lg font-bold">{{ $match['away_odds'] }}</div>
                                 </button>
                             </div>
@@ -210,11 +210,11 @@
             <div class="space-y-6">
 
                 <!-- Quick Stats -->
-                <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-colors">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-bold text-gray-900">Your Stats</h3>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">Your Stats</h3>
                         @auth
-                            <a href="{{ route('betting-history') }}" class="text-th-blue hover:text-th-red text-sm font-medium transition-colors">
+                            <a href="{{ route('transaction-history') }}" class="text-th-blue hover:text-th-red text-sm font-medium transition-colors">
                                 View All →
                             </a>
                         @endauth
@@ -222,17 +222,17 @@
                     @auth
                         <div class="space-y-3">
                             <div class="flex justify-between">
-                                <span class="text-gray-600">Bets Placed</span>
+                                <span class="text-gray-600 dark:text-gray-400">Bets Placed</span>
                                 <span class="font-semibold">{{ $userStats['total_bets'] }}</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-600">Win Rate</span>
+                                <span class="text-gray-600 dark:text-gray-400">Win Rate</span>
                                 <span class="font-semibold {{ $userStats['win_rate'] >= 50 ? 'text-green-600' : 'text-red-600' }}">
                                     {{ $userStats['win_rate'] }}%
                                 </span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-600">Profit/Loss</span>
+                                <span class="text-gray-600 dark:text-gray-400">Profit/Loss</span>
                                 <span class="font-semibold {{ $userStats['net_profit'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
                                     {{ $userStats['net_profit'] >= 0 ? '+' : '' }}{{ $this->formatCurrency($userStats['net_profit']) }}
                                 </span>
@@ -240,14 +240,14 @@
                             @if($userStats['total_bets'] == 0)
                                 <div class="text-center py-4">
                                     <div class="text-4xl mb-2">🎯</div>
-                                    <p class="text-gray-500 text-sm">Place your first bet to see stats!</p>
+                                    <p class="text-gray-500 dark:text-gray-400 text-sm">Place your first bet to see stats!</p>
                                 </div>
                             @endif
                         </div>
                     @else
                         <div class="text-center py-6">
                             <div class="text-4xl mb-3">📊</div>
-                            <p class="text-gray-500 text-sm mb-4">Login to view your betting stats</p>
+                            <p class="text-gray-500 dark:text-gray-400 text-sm mb-4">Login to view your betting stats</p>
                             <a href="{{ route('login') }}" class="bg-th-blue hover:bg-th-red text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm">
                                 Login Now
                             </a>
@@ -256,39 +256,39 @@
                 </div>
 
                 <!-- Top Leagues -->
-                <div class="bg-white rounded-xl shadow-lg p-6">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4">Virtual Leagues</h3>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-colors">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Virtual Leagues</h3>
                     <div class="space-y-3">
                         <div class="flex items-center justify-between p-3 bg-gradient-to-r from-th-red/10 to-th-blue/10 rounded-lg">
                             <div class="flex items-center space-x-2">
                                 <span class="text-lg">🏆</span>
                                 <span class="font-medium">Premier Virtual</span>
                             </div>
-                            <span class="text-sm text-gray-600">24 matches</span>
+                            <span class="text-sm text-gray-600 dark:text-gray-400">24 matches</span>
                         </div>
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                             <div class="flex items-center space-x-2">
                                 <img src="{{ asset('images/goalguessers.png') }}" alt="GoalGuessers Logo" class="w-5 h-5 object-contain">
                                 <span class="font-medium">Championship V</span>
                             </div>
-                            <span class="text-sm text-gray-600">18 matches</span>
+                            <span class="text-sm text-gray-600 dark:text-gray-400">18 matches</span>
                         </div>
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                             <div class="flex items-center space-x-2">
                                 <span class="text-lg">🥅</span>
                                 <span class="font-medium">League Virtual</span>
                             </div>
-                            <span class="text-sm text-gray-600">12 matches</span>
+                            <span class="text-sm text-gray-600 dark:text-gray-400">12 matches</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Recent Activity -->
-                <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-colors">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-bold text-gray-900">Recent Activity</h3>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">Recent Activity</h3>
                         @auth
-                            <a href="{{ route('betting-history') }}" class="text-th-blue hover:text-th-red text-sm font-medium transition-colors">
+                            <a href="{{ route('transaction-history') }}" class="text-th-blue hover:text-th-red text-sm font-medium transition-colors">
                                 View All →
                             </a>
                         @endauth
@@ -297,11 +297,11 @@
                         @if(count($userStats['recent_activity']) > 0)
                             <div class="space-y-3">
                                 @foreach($userStats['recent_activity'] as $activity)
-                                    <div class="flex items-center space-x-3 p-3 {{ $activity['status'] === 'won' ? 'bg-green-50' : ($activity['status'] === 'lost' ? 'bg-red-50' : 'bg-gray-50') }} rounded-lg">
+                                    <div class="flex items-center space-x-3 p-3 {{ $activity['status'] === 'won' ? 'bg-green-50 dark:bg-green-900/30' : ($activity['status'] === 'lost' ? 'bg-red-50 dark:bg-red-900/30' : 'bg-gray-50 dark:bg-gray-700') }} rounded-lg">
                                         <div class="w-2 h-2 {{ $activity['status'] === 'won' ? 'bg-green-500' : ($activity['status'] === 'lost' ? 'bg-red-500' : 'bg-gray-500') }} rounded-full"></div>
                                         <div class="flex-1">
                                             <div class="text-sm font-medium">{{ $activity['match'] }}</div>
-                                            <div class="text-xs text-gray-500">
+                                            <div class="text-xs text-gray-500 dark:text-gray-400">
                                                 {{ ucfirst($activity['bet_type']) }} bet • {{ $activity['gameweek'] }}
                                             </div>
                                             <div class="text-xs {{ $activity['status'] === 'won' ? 'text-green-600' : ($activity['status'] === 'lost' ? 'text-red-600' : 'text-gray-600') }} font-medium">
@@ -314,7 +314,7 @@
                                                 @endif
                                             </div>
                                         </div>
-                                        <div class="text-xs text-gray-400">
+                                        <div class="text-xs text-gray-400 dark:text-gray-500">
                                             {{ $activity['created_at']->diffForHumans() }}
                                         </div>
                                     </div>
@@ -323,14 +323,14 @@
                         @else
                             <div class="text-center py-6">
                                 <div class="text-4xl mb-3">📈</div>
-                                <p class="text-gray-500 text-sm">No recent activity</p>
-                                <p class="text-gray-400 text-xs mt-1">Start betting to see activity here!</p>
+                                <p class="text-gray-500 dark:text-gray-400 text-sm">No recent activity</p>
+                                <p class="text-gray-400 dark:text-gray-500 text-xs mt-1">Start betting to see activity here!</p>
                             </div>
                         @endif
                     @else
                         <div class="text-center py-6">
                             <div class="text-4xl mb-3">📈</div>
-                            <p class="text-gray-500 text-sm mb-4">Login to view your activity</p>
+                            <p class="text-gray-500 dark:text-gray-400 text-sm mb-4">Login to view your activity</p>
                             <a href="{{ route('login') }}" class="bg-th-blue hover:bg-th-red text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm">
                                 Login Now
                             </a>
