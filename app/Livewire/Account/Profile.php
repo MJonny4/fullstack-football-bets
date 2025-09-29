@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\Account;
 
 use App\Models\User;
 use App\Services\UserStatsService;
@@ -164,7 +164,7 @@ class Profile extends Component
     {
         $userStats = $this->getUserStats();
 
-        return view('livewire.profile', [
+        return view('livewire.account.profile', [
             'userStats' => $userStats,
         ])->layout('components.layouts.app', ['title' => 'Profile - GoalGuessers']);
     }

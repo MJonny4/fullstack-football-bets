@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\Matches;
 
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -209,7 +209,7 @@ class FixturesAndResults extends Component
         $currentGameweek = $this->getCurrentGameweek();
         $matchCounts = $this->getMatchCounts();
 
-        return view('livewire.fixtures-and-results', [
+        return view('livewire.matches.fixtures-and-results', [
             'matches' => $matches,
             'upcomingHighlights' => $upcomingHighlights,
             'recentResults' => $recentResults,

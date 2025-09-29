@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\About;
 
 use Livewire\Component;
 use App\Models\Team;
@@ -23,7 +23,7 @@ class About extends Component
             'total_virtual_balance' => User::sum('virtual_balance'),
         ];
 
-        return view('livewire.about', compact('stats'))
+        return view('livewire.about.about', compact('stats'))
             ->layout('components.layouts.app', ['title' => 'About GoalGuessers']);
     }
 }

@@ -1,6 +1,6 @@
-<div class="min-h-dvh bg-gray-50 dark:bg-gray-900">
-    <!-- Navigation -->
+<div>
     <x-navigation />
+
 
     <!-- Hero Section -->
     <div class="bg-gradient-to-br from-th-navy via-th-blue to-th-red py-20">
@@ -266,4 +266,6 @@
             @endguest
         </div>
     </div>
+    <x-footer />
+
 </div>

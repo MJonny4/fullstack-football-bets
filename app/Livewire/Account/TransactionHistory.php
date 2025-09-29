@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\Account;
 
 use App\Models\User;
 use App\Models\Bet;
@@ -347,7 +347,7 @@ class TransactionHistory extends Component
 
     public function render()
     {
-        return view('livewire.transaction-history', [
+        return view('livewire.account.transaction-history', [
             'transactions' => $this->transactions,
             'transactionStats' => $this->transactionStats,
             'balanceHistory' => $this->balanceHistory,

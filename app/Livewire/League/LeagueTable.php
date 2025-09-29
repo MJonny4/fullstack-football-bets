@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\League;
 
 use Livewire\Component;
 use App\Models\Season;
@@ -268,7 +268,7 @@ class LeagueTable extends Component
 
     public function render()
     {
-        return view('livewire.league-table', [
+        return view('livewire.league.league-table', [
             'standings' => $this->getTableData(),
             'topScorers' => $this->getTopScorers(),
             'seasonName' => $this->season?->name ?? 'No Active Season',

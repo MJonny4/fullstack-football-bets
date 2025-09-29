@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\Home;
 
 use App\Models\Season;
 use App\Models\Gameweek;
@@ -198,7 +198,7 @@ class Home extends Component
 
     public function render()
     {
-        return view('livewire.home', [
+        return view('livewire.home.home', [
             'upcomingMatches' => $this->getUpcomingMatches(),
             'gameweekInfo' => $this->getCurrentGameweekInfo(),
             'leagueStats' => $this->getLeagueStats(),

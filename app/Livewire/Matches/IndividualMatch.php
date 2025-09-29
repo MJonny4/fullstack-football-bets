@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\Matches;
 
 use Livewire\Component;
 use App\Models\FootballMatch;
@@ -190,7 +190,7 @@ class IndividualMatch extends Component
 
     public function render()
     {
-        return view('livewire.individual-match', [
+        return view('livewire.matches.individual-match', [
             'matchData' => $this->getMatchData(),
         ])->layout('components.layouts.app', ['title' => $this->getTitle()]);
     }

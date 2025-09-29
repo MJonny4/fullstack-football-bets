@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\Account;
 
 use Livewire\Component;
 use App\Services\UserStatsService;
@@ -165,7 +165,7 @@ class Dashboard extends Component
 
     public function render()
     {
-        return view('livewire.dashboard', [
+        return view('livewire.account.dashboard', [
             'kpiCards' => $this->getKPICards(),
             'recentBets' => $this->getRecentBetsForDisplay(),
             'topTeams' => $this->getTopTeamsForDisplay(),

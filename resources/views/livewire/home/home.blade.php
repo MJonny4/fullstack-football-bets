@@ -1,13 +1,15 @@
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-    <!-- Professional Navigation -->
+<div>
     <x-navigation />
 
     <!-- Hero Section -->
-    <div class="text-white py-12 bg-gradient-to-br from-th-navy to-th-blue">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-white py-4 bg-gradient-to-r from-th-blue to-th-navy">
+        <div class="max-w-7xl mx-auto px-2">
             <div class="text-center">
+                {{-- Icon --}}
+                <img src="{{ asset('images/goalguessers.png') }}" alt="GoalGuessers Logo" class="h-40 mx-auto">
+                {{-- Title --}}
                 <h1 class="text-4xl md:text-6xl font-bold mb-4">
-                    Virtual Football Betting
+                    GoalGuessers Virtual Football Betting
                 </h1>
                 <p class="text-xl md:text-2xl text-gray-300 mb-8">
                     Experience the thrill with virtual money - {{ $gameweekInfo['name'] }}
@@ -17,29 +19,6 @@
                         <span class="text-red-300">(Betting Closed)</span>
                     @endif
                 </p>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-6xl mx-auto">
-                    <div class="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-                        <div class="text-3xl font-bold text-th-red">{{ $leagueStats['upcoming_matches'] }}</div>
-                        <div class="text-sm text-gray-300">Upcoming Matches</div>
-                    </div>
-                    <div class="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-                        <div class="text-3xl font-bold text-th-red">{{ $leagueStats['active_teams'] }}</div>
-                        <div class="text-sm text-gray-300">Active Teams</div>
-                    </div>
-                    <div class="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-                        <div class="text-3xl font-bold text-th-red">{{ $leagueStats['total_matches'] }}</div>
-                        <div class="text-sm text-gray-300">Total Matches</div>
-                    </div>
-                    <div class="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-                        <div class="text-3xl font-bold {{ $leagueStats['live_matches'] > 0 ? 'text-red-400 animate-pulse' : 'text-th-red' }}">{{ $leagueStats['live_matches'] }}</div>
-                        <div class="text-sm text-gray-300 flex items-center">
-                            @if($leagueStats['live_matches'] > 0)
-                                <span class="w-2 h-2 bg-red-400 rounded-full mr-2 animate-pulse"></span>
-                            @endif
-                            Live Matches
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -105,8 +84,8 @@
 
             <!-- Upcoming Matches -->
             <div class="lg:col-span-2">
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg transition-colors">
-                    <div class="p-6 border-b border-gray-200 dark:border-gray-600">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md transition-colors">
+                    <div class="p-6 border-gray-200 dark:border-gray-600">
                         <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Upcoming Matches</h2>
                         <p class="text-gray-600 dark:text-gray-400">Place your virtual bets now</p>
                     </div>
@@ -255,34 +234,6 @@
                     @endauth
                 </div>
 
-                <!-- Top Leagues -->
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-colors">
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Virtual Leagues</h3>
-                    <div class="space-y-3">
-                        <div class="flex items-center justify-between p-3 bg-gradient-to-r from-th-red/10 to-th-blue/10 rounded-lg">
-                            <div class="flex items-center space-x-2">
-                                <span class="text-lg">🏆</span>
-                                <span class="font-medium">Premier Virtual</span>
-                            </div>
-                            <span class="text-sm text-gray-600 dark:text-gray-400">24 matches</span>
-                        </div>
-                        <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                            <div class="flex items-center space-x-2">
-                                <img src="{{ asset('images/goalguessers.png') }}" alt="GoalGuessers Logo" class="w-5 h-5 object-contain">
-                                <span class="font-medium">Championship V</span>
-                            </div>
-                            <span class="text-sm text-gray-600 dark:text-gray-400">18 matches</span>
-                        </div>
-                        <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                            <div class="flex items-center space-x-2">
-                                <span class="text-lg">🥅</span>
-                                <span class="font-medium">League Virtual</span>
-                            </div>
-                            <span class="text-sm text-gray-600 dark:text-gray-400">12 matches</span>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Recent Activity -->
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-colors">
                     <div class="flex items-center justify-between mb-4">
@@ -342,20 +293,8 @@
     </div>
 
     <!-- Bet Modal -->
-    <livewire:bet-modal />
+    <livewire:account.bet-modal />
 
-    <!-- Footer -->
-    <footer class="bg-th-navy text-white py-8 mt-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center">
-                <div class="text-lg font-semibold mb-2">GoalGuessers</div>
-                <div class="text-gray-400 text-sm">
-                    Virtual football betting with fake money - No real gambling involved
-                </div>
-                <div class="text-gray-500 text-xs mt-2">
-                    This is a demonstration platform using virtual currency only
-                </div>
-            </div>
-        </div>
-    </footer>
+    <x-footer />
+
 </div>

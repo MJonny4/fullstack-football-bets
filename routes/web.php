@@ -2,18 +2,18 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-use App\Livewire\Home;
+use App\Livewire\Home\Home;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
-use App\Livewire\LeagueTable;
-use App\Livewire\Dashboard;
-use App\Livewire\FixturesAndResults;
-use App\Livewire\LiveMatches;
-use App\Livewire\IndividualMatch;
-use App\Livewire\Profile;
-use App\Livewire\TransactionHistory;
-use App\Livewire\Leaderboards;
-use App\Livewire\About;
+use App\Livewire\League\LeagueTable;
+use App\Livewire\Account\Dashboard;
+use App\Livewire\Matches\FixturesAndResults;
+use App\Livewire\Matches\LiveMatches;
+use App\Livewire\Matches\IndividualMatch;
+use App\Livewire\Account\Profile;
+use App\Livewire\Account\TransactionHistory;
+use App\Livewire\League\Leaderboards;
+use App\Livewire\About\About;
 
 // Public routes (accessible to everyone)
 Route::get('/', Home::class)->name('home');

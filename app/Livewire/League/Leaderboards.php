@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\League;
 
 use App\Models\User;
 use App\Models\Bet;
@@ -316,7 +316,7 @@ class Leaderboards extends Component
             default => collect([]),
         };
 
-        return view('livewire.leaderboards', [
+        return view('livewire.league.leaderboards', [
             'leaderboardData' => $leaderboardData,
             'currentUserRank' => $this->currentUserRank,
         ])->layout('components.layouts.app', ['title' => 'Leaderboards - GoalGuessers']);

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\Account;
 
 use Livewire\Component;
 use App\Models\FootballMatch;
@@ -302,6 +302,6 @@ class BetModal extends Component
 
     public function render()
     {
-        return view('livewire.bet-modal');
+        return view('livewire.account.bet-modal');
     }
 }

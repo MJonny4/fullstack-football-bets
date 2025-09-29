@@ -1,6 +1,6 @@
-<div>
-    <!-- Navigation -->
+<div data-auto-refresh="30000">
     <x-navigation />
+
 
     <div class="min-h-screen bg-gradient-to-br from-th-blue via-th-navy to-th-red">
         <!-- Header Section -->
@@ -273,11 +273,7 @@
 
     <!-- Auto-refresh script -->
     @if(count($liveMatches) > 0)
-    <script>
-        // Auto-refresh every 30 seconds when there are live matches
-        setInterval(function() {
-            window.location.reload();
-        }, 30000);
-    </script>
     @endif
+    <x-footer />
+
 </div>

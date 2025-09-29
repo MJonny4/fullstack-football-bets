@@ -1,5 +1,6 @@
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+<div>
     <x-navigation />
+
 
     <!-- Header -->
     <div class="bg-gradient-to-br from-th-navy to-th-blue text-white py-8">
@@ -106,4 +107,6 @@
             </div>
         </div>
     </div>
+    <x-footer />
+
 </div>

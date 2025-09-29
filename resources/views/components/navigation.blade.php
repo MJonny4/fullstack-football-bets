@@ -8,13 +8,13 @@
     $timeInfo = $navState['time_info'];
 @endphp
 
-<nav class="shadow-lg bg-gradient-to-br from-th-red to-th-blue relative z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<header class="relative z-50 shadow-md bg-gradient-to-b from-th-red to-th-blue">
+    <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
             <!-- Logo -->
             <div class="flex items-center">
                 <a href="{{ route('home') }}" class="flex items-center text-white font-bold text-xl hover:text-gray-200 transition-colors">
-                    <img src="{{ asset('images/goalguessers.png') }}" alt="GoalGuessers Logo" class="w-8 h-8 mr-2 object-contain">
+                    <img src="{{ asset('images/goalguessers.png') }}" alt="GoalGuessers Logo" class="w-16 h-16 object-contain">
                     <span class="hidden sm:block">GoalGuessers</span>
                 </a>
             </div>
@@ -169,7 +169,7 @@
                 </button>
             </div>
         </div>
-    </div>
+    </nav>
 
     <!-- Mobile menu (hidden by default) -->
     <div id="mobile-menu" class="lg:hidden hidden bg-gradient-to-b from-th-blue to-th-red border-t border-white/20">
@@ -263,20 +263,4 @@
         </div>
     </div>
 
-    <script>
-        function toggleMobileMenu() {
-            const menu = document.getElementById('mobile-menu');
-            menu.classList.toggle('hidden');
-        }
-
-        // Close mobile menu when clicking outside
-        document.addEventListener('click', function(event) {
-            const menu = document.getElementById('mobile-menu');
-            const button = event.target.closest('button');
-
-            if (!menu.contains(event.target) && !button?.onclick?.toString().includes('toggleMobileMenu')) {
-                menu.classList.add('hidden');
-            }
-        });
-    </script>
-</nav>
+</header>

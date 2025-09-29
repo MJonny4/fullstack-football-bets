@@ -1,6 +1,6 @@
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-    <!-- Professional Navigation -->
+<div>
     <x-navigation />
+
 
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -195,31 +195,3 @@
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    let isAnimating = false;
-
-    // Simple animation on Livewire updates
-    document.addEventListener('livewire:updated', function() {
-        if (!isAnimating) {
-            isAnimating = true;
-            const rows = document.querySelectorAll('.team-row');
-
-            rows.forEach((row, index) => {
-                row.style.opacity = '0';
-                row.style.transform = 'translateY(10px)';
-
-                setTimeout(() => {
-                    row.style.transition = 'all 300ms ease-out';
-                    row.style.opacity = '1';
-                    row.style.transform = 'translateY(0)';
-                }, index * 50);
-            });
-
-            setTimeout(() => {
-                isAnimating = false;
-            }, rows.length * 50 + 300);
-        }
-    });
-});
-</script>

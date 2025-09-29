@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\Matches;
 
 use Livewire\Component;
 use App\Models\FootballMatch;
@@ -260,7 +260,7 @@ class LiveMatches extends Component
 
     public function render()
     {
-        return view('livewire.live-matches', [
+        return view('livewire.matches.live-matches', [
             'liveMatches' => $this->getLiveMatches(),
             'recentlyFinished' => $this->getRecentlyFinished(),
             'upcomingSoon' => $this->getUpcomingSoon(),

@@ -1,6 +1,6 @@
-<div>
-    <!-- Navigation -->
+<div @if($matchData['status'] === 'live') data-auto-refresh="5000" @endif>
     <x-navigation />
+
 
     <div class="min-h-screen bg-gradient-to-br from-th-blue via-th-navy to-th-red">
         <!-- Back Button -->
@@ -128,13 +128,9 @@
         </div>
     </div>
 
-    <!-- Auto-refresh script for live matches -->
+    
     @if($matchData['status'] === 'live')
-    <script>
-        // Auto-refresh every 5 seconds for live matches
-        setInterval(function() {
-            window.location.reload();
-        }, 5000);
-    </script>
     @endif
+    <x-footer />
+
 </div>
