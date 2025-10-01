@@ -1,16 +1,15 @@
-<div>
+<div class="flex flex-col min-h-screen">
     <x-navigation />
 
-
     <!-- Header -->
-    <div class="bg-gradient-to-br from-th-navy to-th-blue text-white py-8">
+    <div class="bg-gradient-to-r from-th-blue to-th-navy text-white py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h1 class="text-3xl font-bold">🏆 Leaderboards</h1>
-            <p class="text-gray-300 mt-2">Compete with other players and climb the rankings</p>
+            <p class="text-blue-100 mt-2">Compete with other players and climb the rankings</p>
         </div>
     </div>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         <!-- Controls -->
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8 transition-colors">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">

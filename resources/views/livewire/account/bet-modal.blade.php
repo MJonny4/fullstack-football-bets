@@ -30,23 +30,23 @@
                         <div class="px-6 py-6">
                             <!-- Match Info -->
                             <div class="text-center mb-6">
-                                <div class="text-sm text-gray-500 mb-2">{{ $match->gameweek->name }}</div>
+                                <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">{{ $match->gameweek->name }}</div>
                                 <div class="flex items-center justify-center space-x-4">
                                     <div class="flex items-center space-x-2">
                                         <img src="{{ $match->homeTeam->logo_url }}"
                                              alt="{{ $match->homeTeam->name }}"
                                              class="w-8 h-8 rounded">
-                                        <span class="font-medium text-gray-800 dark:text-gray-200">{{ $match->homeTeam->name }}</span>
+                                        <span class="font-medium text-gray-900 dark:text-gray-100">{{ $match->homeTeam->name }}</span>
                                     </div>
-                                    <span class="text-gray-400 font-bold">vs</span>
+                                    <span class="text-gray-400 dark:text-gray-500 font-bold">vs</span>
                                     <div class="flex items-center space-x-2">
-                                        <span class="font-medium text-gray-800 dark:text-gray-200">{{ $match->awayTeam->name }}</span>
+                                        <span class="font-medium text-gray-900 dark:text-gray-100">{{ $match->awayTeam->name }}</span>
                                         <img src="{{ $match->awayTeam->logo_url }}"
                                              alt="{{ $match->awayTeam->name }}"
                                              class="w-8 h-8 rounded">
                                     </div>
                                 </div>
-                                <div class="text-sm text-gray-500 mt-2">
+                                <div class="text-sm text-gray-500 dark:text-gray-400 mt-2">
                                     {{ $match->getFormattedKickoffDate() }} - {{ $match->getFormattedKickoffTime() }}
                                 </div>
                             </div>
@@ -133,13 +133,13 @@
 
                                 <!-- Custom Amount Input -->
                                 <div class="relative">
-                                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">€</span>
+                                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 font-medium">€</span>
                                     <input type="number"
                                            wire:model.live="betAmount"
                                            min="{{ self::MIN_BET_AMOUNT }}"
                                            max="{{ self::MAX_BET_AMOUNT }}"
                                            step="0.01"
-                                           class="w-full pl-8 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-th-blue focus:border-transparent text-lg font-medium bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                           class="w-full pl-8 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-th-blue focus:border-transparent text-lg font-medium bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                                            placeholder="Enter amount">
                                 </div>
 

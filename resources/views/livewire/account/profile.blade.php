@@ -3,16 +3,16 @@
 
 
     <!-- Page Header -->
-    <div class="bg-gradient-to-br from-th-navy to-th-blue text-white py-8">
+    <div class="bg-gradient-to-r from-th-blue to-th-navy text-white py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between">
                 <div>
                     <h1 class="text-3xl font-bold">My Profile</h1>
-                    <p class="text-gray-300 mt-2">Manage your account settings and preferences</p>
+                    <p class="text-blue-100 mt-2">Manage your account settings and preferences</p>
                 </div>
                 <div class="text-right">
-                    <div class="text-2xl font-bold text-th-red">{{ $this->formatCurrency($user->virtual_balance) }}</div>
-                    <div class="text-sm text-gray-300">Current Balance</div>
+                    <div class="text-2xl font-bold text-white">{{ $this->formatCurrency($user->virtual_balance) }}</div>
+                    <div class="text-sm text-blue-100">Current Balance</div>
                 </div>
             </div>
         </div>
@@ -51,7 +51,7 @@
                                         type="text"
                                         id="name"
                                         wire:model="name"
-                                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-th-blue focus:border-transparent"
+                                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-th-blue focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                                         placeholder="Enter your full name"
                                     >
                                     @error('name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
@@ -64,7 +64,7 @@
                                         type="email"
                                         id="email"
                                         wire:model="email"
-                                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-th-blue focus:border-transparent"
+                                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-th-blue focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                                         placeholder="Enter your email"
                                     >
                                     @error('email') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
@@ -78,7 +78,7 @@
                                     type="date"
                                     id="birth_date"
                                     wire:model="birth_date"
-                                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-th-blue focus:border-transparent"
+                                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-th-blue focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                                 >
                                 @error('birth_date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Must be 18+ to use this platform</p>
@@ -122,7 +122,7 @@
                                         type="password"
                                         id="currentPassword"
                                         wire:model="currentPassword"
-                                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-th-blue focus:border-transparent"
+                                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-th-blue focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                                         placeholder="Enter current password"
                                     >
                                     @error('currentPassword') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
@@ -136,7 +136,7 @@
                                             type="password"
                                             id="newPassword"
                                             wire:model="newPassword"
-                                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-th-blue focus:border-transparent"
+                                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-th-blue focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                                             placeholder="Enter new password"
                                         >
                                         @error('newPassword') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
@@ -149,7 +149,7 @@
                                             type="password"
                                             id="newPasswordConfirmation"
                                             wire:model="newPasswordConfirmation"
-                                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-th-blue focus:border-transparent"
+                                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-th-blue focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                                             placeholder="Confirm new password"
                                         >
                                     </div>
@@ -158,7 +158,7 @@
                                     <button
                                         type="button"
                                         wire:click="togglePasswordForm"
-                                        class="bg-gray-200 hover:bg-gray-300 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-lg font-medium transition-colors"
+                                        class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-lg font-medium transition-colors"
                                     >
                                         Cancel
                                     </button>
@@ -188,22 +188,22 @@
                         <p class="text-gray-600 dark:text-gray-400">Manage your virtual betting balance</p>
                     </div>
                     <div class="p-6">
-                        <div class="bg-gradient-to-r from-th-red/10 to-th-blue/10 rounded-lg p-6 mb-6">
+                        <div class="bg-gradient-to-r from-th-red/10 to-th-blue/10 dark:from-th-red/20 dark:to-th-blue/20 rounded-lg p-6 mb-6">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <div class="text-3xl font-bold text-th-navy">{{ $this->formatCurrency($user->virtual_balance) }}</div>
+                                    <div class="text-3xl font-bold text-th-navy dark:text-blue-400">{{ $this->formatCurrency($user->virtual_balance) }}</div>
                                     <div class="text-sm text-gray-600 dark:text-gray-400">Current Virtual Balance</div>
                                 </div>
                                 <div class="text-4xl">💰</div>
                             </div>
                         </div>
 
-                        <div class="border border-orange-200 bg-orange-50 rounded-lg p-4 mb-6">
+                        <div class="border border-orange-200 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/30 rounded-lg p-4 mb-6">
                             <div class="flex items-start space-x-3">
-                                <div class="text-orange-500 text-xl">⚠️</div>
+                                <div class="text-orange-500 dark:text-orange-400 text-xl">⚠️</div>
                                 <div>
-                                    <h4 class="font-medium text-orange-800">Reset Virtual Balance</h4>
-                                    <p class="text-sm text-orange-700 mt-1">
+                                    <h4 class="font-medium text-orange-800 dark:text-orange-300">Reset Virtual Balance</h4>
+                                    <p class="text-sm text-orange-700 dark:text-orange-400 mt-1">
                                         This will reset your balance to €1,000 and cannot be undone. Use this if you want to start fresh.
                                     </p>
                                 </div>
@@ -293,16 +293,16 @@
             <div class="space-y-6">
 
                 <!-- Account Overview -->
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-colors">
                     <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Account Overview</h3>
                     <div class="space-y-4">
                         <div class="flex justify-between">
                             <span class="text-gray-600 dark:text-gray-400">Member Since</span>
-                            <span class="font-semibold">{{ $user->created_at->format('M Y') }}</span>
+                            <span class="font-semibold text-gray-900 dark:text-gray-100">{{ $user->created_at->format('M Y') }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-gray-600 dark:text-gray-400">Total Bets</span>
-                            <span class="font-semibold">{{ $userStats['overview']['total_bets'] }}</span>
+                            <span class="font-semibold text-gray-900 dark:text-gray-100">{{ $userStats['overview']['total_bets'] }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-gray-600 dark:text-gray-400">Win Rate</span>
@@ -338,16 +338,16 @@
                 @endif
 
                 <!-- Quick Actions -->
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-colors">
                     <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Quick Actions</h3>
                     <div class="space-y-3">
                         <a href="{{ route('transaction-history') }}" class="block w-full text-center bg-th-blue hover:bg-th-red text-white py-3 rounded-lg font-medium transition-colors">
                             View Betting & Transactions
                         </a>
-                        <a href="{{ route('dashboard') }}" class="block w-full text-center bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-700 dark:text-gray-300 py-3 rounded-lg font-medium transition-colors">
+                        <a href="{{ route('dashboard') }}" class="block w-full text-center bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 py-3 rounded-lg font-medium transition-colors">
                             Go to Dashboard
                         </a>
-                        <a href="{{ route('home') }}" class="block w-full text-center bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-700 dark:text-gray-300 py-3 rounded-lg font-medium transition-colors">
+                        <a href="{{ route('home') }}" class="block w-full text-center bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 py-3 rounded-lg font-medium transition-colors">
                             Start Betting
                         </a>
                     </div>

@@ -3,19 +3,19 @@
 
 
     <!-- Hero Section -->
-    <div class="bg-gradient-to-br from-th-navy via-th-blue to-th-red py-20">
+    <div class="bg-gradient-to-r from-th-blue to-th-navy py-20">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div class="mb-8">
-                <img src="{{ asset('images/goalguessers.png') }}" alt="GoalGuessers Logo" class="w-20 h-20 mx-auto mb-4">
+                <img src="{{ asset('images/goalguessers.png') }}" alt="GoalGuessers Logo" class="w-40 h-40 mx-auto mb-4">
             </div>
             <h1 class="text-4xl md:text-6xl font-bold text-white mb-6">
                 About GoalGuessers
             </h1>
-            <p class="text-xl md:text-2xl text-gray-200 max-w-3xl mx-auto">
+            <p class="text-xl md:text-2xl text-blue-100 max-w-3xl mx-auto">
                 The premier virtual football betting platform that brings the excitement of the beautiful game to your fingertips
             </p>
-            <div class="mt-8 text-lg text-gray-300">
-                <span class="bg-white/10 px-4 py-2 rounded-full">
+            <div class="mt-8 text-lg">
+                <span class="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white">
                     🎮 Virtual Currency Only - No Real Money Involved
                 </span>
             </div>
@@ -56,7 +56,7 @@
     </div>
 
     <!-- What is GoalGuessers -->
-    <div class="py-16 bg-gray-50 dark:bg-gray-900">
+    <div class="py-16 bg-gray-100 dark:bg-gray-900">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-12">
                 <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">What is GoalGuessers?</h2>
@@ -66,7 +66,7 @@
             </div>
 
             <div class="grid md:grid-cols-2 gap-8">
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transition-colors">
                     <div class="text-2xl mb-4">⚽</div>
                     <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">Complete Football League</h3>
                     <p class="text-gray-600 dark:text-gray-400">
@@ -74,7 +74,7 @@
                     </p>
                 </div>
 
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transition-colors">
                     <div class="text-2xl mb-4">💰</div>
                     <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">Virtual Betting System</h3>
                     <p class="text-gray-600 dark:text-gray-400">
@@ -82,7 +82,7 @@
                     </p>
                 </div>
 
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transition-colors">
                     <div class="text-2xl mb-4">🔴</div>
                     <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">Live Match Simulations</h3>
                     <p class="text-gray-600 dark:text-gray-400">
@@ -90,7 +90,7 @@
                     </p>
                 </div>
 
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transition-colors">
                     <div class="text-2xl mb-4">🏆</div>
                     <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">League Management</h3>
                     <p class="text-gray-600 dark:text-gray-400">
@@ -155,13 +155,13 @@
     </div>
 
     <!-- Technology Stack -->
-    <div class="py-16 bg-gray-50 dark:bg-gray-900">
+    <div class="py-16 bg-gray-100 dark:bg-gray-900">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 class="text-3xl font-bold text-center text-gray-900 dark:text-gray-100 mb-12">Technology Stack</h2>
 
             <div class="grid md:grid-cols-2 gap-8">
-                <div>
-                    <h3 class="text-xl font-semibold text-th-blue mb-4">Backend Technologies</h3>
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transition-colors">
+                    <h3 class="text-xl font-semibold text-th-blue dark:text-blue-400 mb-4">Backend Technologies</h3>
                     <ul class="space-y-3">
                         <li class="flex items-center">
                             <span class="w-2 h-2 bg-th-red rounded-full mr-3"></span>
@@ -182,8 +182,8 @@
                     </ul>
                 </div>
 
-                <div>
-                    <h3 class="text-xl font-semibold text-th-blue mb-4">Frontend Technologies</h3>
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transition-colors">
+                    <h3 class="text-xl font-semibold text-th-blue dark:text-blue-400 mb-4">Frontend Technologies</h3>
                     <ul class="space-y-3">
                         <li class="flex items-center">
                             <span class="w-2 h-2 bg-th-red rounded-full mr-3"></span>
@@ -241,7 +241,7 @@
     </div>
 
     <!-- Footer CTA -->
-    <div class="py-16 bg-gradient-to-r from-th-blue to-th-red">
+    <div class="py-16">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 class="text-3xl font-bold text-white mb-4">Ready to Start Your Journey?</h2>
             <p class="text-xl text-gray-200 mb-8">

@@ -3,16 +3,16 @@
 
 
     <!-- Page Header -->
-    <div class="bg-gradient-to-br from-th-navy to-th-blue text-white py-8">
+    <div class="bg-gradient-to-r from-th-blue to-th-navy text-white py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between">
                 <div>
                     <h1 class="text-3xl font-bold">Betting & Transactions</h1>
-                    <p class="text-gray-300 mt-2">Complete view of your betting activity, performance, and virtual money flow</p>
+                    <p class="text-blue-100 mt-2">Complete view of your betting activity, performance, and virtual money flow</p>
                 </div>
                 <div class="text-right">
-                    <div class="text-2xl font-bold text-th-red">{{ $this->formatCurrency($user->virtual_balance) }}</div>
-                    <div class="text-sm text-gray-300">Current Balance</div>
+                    <div class="text-2xl font-bold text-white">{{ $this->formatCurrency($user->virtual_balance) }}</div>
+                    <div class="text-sm text-blue-100">Current Balance</div>
                 </div>
             </div>
         </div>
@@ -146,13 +146,13 @@
 
             <!-- Transaction/Betting List -->
             <div class="lg:col-span-2">
-                <div class="bg-white rounded-xl shadow-lg">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg transition-colors">
                     <!-- Header with Results Count -->
-                    <div class="p-6 border-b border-gray-200">
+                    <div class="p-6 border-b border-gray-200 dark:border-gray-700">
                         <div class="flex items-center justify-between">
                             <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">
                                 Betting Activity
-                                <span class="text-sm font-normal text-gray-500">
+                                <span class="text-sm font-normal text-gray-500 dark:text-gray-400">
                                     ({{ $transactions->total() }} results)
                                 </span>
                             </h3>
@@ -160,9 +160,9 @@
                     </div>
 
                     <!-- Transaction List -->
-                    <div class="divide-y divide-gray-200">
+                    <div class="divide-y divide-gray-200 dark:divide-gray-700">
                         @forelse($transactions as $bet)
-                            <div class="p-6 hover:bg-gray-50 transition-colors">
+                            <div class="p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                                 <div class="flex items-start justify-between">
                                     <div class="flex items-start space-x-4 flex-1">
                                         <!-- Status Icon -->
@@ -264,7 +264,7 @@
 
                     <!-- Pagination -->
                     @if($transactions->hasPages())
-                        <div class="p-6 border-t border-gray-200">
+                        <div class="p-6 border-t border-gray-200 dark:border-gray-700">
                             {{ $transactions->links() }}
                         </div>
                     @endif
@@ -281,10 +281,10 @@
                         <a href="{{ route('home') }}" class="block w-full text-center bg-th-blue hover:bg-th-red text-white py-3 rounded-lg font-medium transition-colors">
                             Place New Bet
                         </a>
-                        <a href="{{ route('dashboard') }}" class="block w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-lg font-medium transition-colors">
+                        <a href="{{ route('dashboard') }}" class="block w-full text-center bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 py-3 rounded-lg font-medium transition-colors">
                             Dashboard
                         </a>
-                        <a href="{{ route('profile') }}" class="block w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-lg font-medium transition-colors">
+                        <a href="{{ route('profile') }}" class="block w-full text-center bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 py-3 rounded-lg font-medium transition-colors">
                             Profile Settings
                         </a>
                     </div>
@@ -296,26 +296,26 @@
                         <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Performance Summary</h3>
                         <div class="space-y-4">
                             <div class="flex justify-between">
-                                <span class="text-gray-600">Win Rate</span>
+                                <span class="text-gray-600 dark:text-gray-400">Win Rate</span>
                                 <span class="font-semibold {{ $transactionStats['win_rate'] >= 50 ? 'text-green-600' : 'text-red-600' }}">
                                     {{ $transactionStats['win_rate'] }}%
                                 </span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-600">Total Profit/Loss</span>
+                                <span class="text-gray-600 dark:text-gray-400">Total Profit/Loss</span>
                                 <span class="font-semibold {{ $transactionStats['net_change'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
                                     {{ $transactionStats['net_change'] >= 0 ? '+' : '' }}{{ $this->formatCurrency($transactionStats['net_change']) }}
                                 </span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-600">Avg Bet Amount</span>
-                                <span class="font-semibold">
+                                <span class="text-gray-600 dark:text-gray-400">Avg Bet Amount</span>
+                                <span class="font-semibold text-gray-900 dark:text-gray-100">
                                     {{ $this->formatCurrency($transactionStats['total_wagered'] / $transactionStats['total_transactions']) }}
                                 </span>
                             </div>
                             @if($transactionStats['pending_amount'] > 0)
                                 <div class="flex justify-between">
-                                    <span class="text-gray-600">Pending Amount</span>
+                                    <span class="text-gray-600 dark:text-gray-400">Pending Amount</span>
                                     <span class="font-semibold text-orange-600">
                                         {{ $this->formatCurrency($transactionStats['pending_amount']) }}
                                     </span>
@@ -330,7 +330,7 @@
                     <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Recent Balance Changes</h3>
                     <div class="space-y-3 max-h-80 overflow-y-auto">
                         @foreach($balanceHistory as $entry)
-                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                                 <div class="flex-1 min-w-0">
                                     <div class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{{ $entry['description'] }}</div>
                                     <div class="text-xs text-gray-500 dark:text-gray-400">{{ $entry['date'] }}</div>
@@ -350,10 +350,10 @@
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-colors">
                     <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Export Data</h3>
                     <div class="space-y-3">
-                        <button class="block w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-lg font-medium transition-colors" onclick="alert('CSV export coming soon!')">
+                        <button class="block w-full text-center bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 py-3 rounded-lg font-medium transition-colors" onclick="alert('CSV export coming soon!')">
                             📊 Export to CSV
                         </button>
-                        <button class="block w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-lg font-medium transition-colors" onclick="alert('PDF export coming soon!')">
+                        <button class="block w-full text-center bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 py-3 rounded-lg font-medium transition-colors" onclick="alert('PDF export coming soon!')">
                             📄 Export to PDF
                         </button>
                     </div>

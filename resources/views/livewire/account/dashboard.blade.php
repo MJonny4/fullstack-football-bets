@@ -15,19 +15,19 @@
                     <div class="bg-white dark:bg-gray-800/20 backdrop-blur-sm rounded-lg p-1">
                         <button
                             wire:click="changePeriod('week')"
-                            class="px-3 py-1 text-sm rounded {{ $selectedPeriod === 'week' ? 'bg-white dark:bg-gray-800 text-th-blue' : 'text-white hover:bg-white dark:bg-gray-800/20' }} transition-colors"
+                            class="px-3 py-1 text-sm rounded {{ $selectedPeriod === 'week' ? 'bg-gray-200 shadow-md dark:bg-gray-300 text-th-blue dark:text-th-red' : ' dark:hover:text-th-blue text-black hover:bg-gray-300 dark:text-white' }} transition-colors"
                         >
                             Week
                         </button>
                         <button
                             wire:click="changePeriod('month')"
-                            class="px-3 py-1 text-sm rounded {{ $selectedPeriod === 'month' ? 'bg-white dark:bg-gray-800 text-th-blue' : 'text-white hover:bg-white dark:bg-gray-800/20' }} transition-colors"
+                            class="px-3 py-1 text-sm rounded {{ $selectedPeriod === 'month' ? 'bg-gray-200 shadow-md dark:bg-gray-300 text-th-blue dark:text-th-red ' : 'dark:hover:text-th-blue text-black hover:bg-gray-300 dark:text-white' }} transition-colors"
                         >
                             Month
                         </button>
                         <button
                             wire:click="changePeriod('all')"
-                            class="px-3 py-1 text-sm rounded {{ $selectedPeriod === 'all' ? 'bg-white dark:bg-gray-800 text-th-blue' : 'text-white hover:bg-white dark:bg-gray-800/20' }} transition-colors"
+                            class="px-3 py-1 text-sm rounded {{ $selectedPeriod === 'all' ? 'bg-gray-200 shadow-md dark:bg-gray-300 text-th-blue dark:text-th-red' : 'dark:hover:text-th-blue text-black hover:bg-gray-300 dark:text-white' }} transition-colors"
                         >
                             All Time
                         </button>
@@ -35,7 +35,7 @@
                     <!-- Refresh Button -->
                     <button
                         wire:click="refreshStats"
-                        class="bg-white dark:bg-gray-800/20 hover:bg-white dark:bg-gray-800/30 backdrop-blur-sm px-4 py-2 rounded-lg font-medium transition-colors flex items-center"
+                        class="text-gray-900 dark:text-gray-50 bg-white dark:bg-gray-800 backdrop-blur-sm px-4 py-2 rounded-lg font-medium transition-colors flex items-center"
                     >
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
@@ -135,7 +135,7 @@
                     @if($recentBets->count() > 0)
                         <div class="space-y-4">
                             @foreach($recentBets as $bet)
-                                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                                <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
                                     <div class="flex-1">
                                         <div class="font-medium text-gray-900 dark:text-gray-100">{{ $bet['match'] }}</div>
                                         <div class="text-sm text-gray-600 dark:text-gray-400">
@@ -185,12 +185,12 @@
                                 <div class="flex items-center justify-center space-x-4 mb-3">
                                     <div class="text-center">
                                         <img src="{{ $match['home_logo'] }}" alt="{{ $match['home_team'] }}" class="w-8 h-8 mx-auto mb-1" onerror="this.style.display='none'">
-                                        <div class="text-sm font-medium">{{ Str::limit($match['home_team'], 12) }}</div>
+                                        <div class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ Str::limit($match['home_team'], 12) }}</div>
                                     </div>
-                                    <div class="text-gray-400 font-bold">vs</div>
+                                    <div class="text-gray-400 dark:text-gray-500 font-bold">vs</div>
                                     <div class="text-center">
                                         <img src="{{ $match['away_logo'] }}" alt="{{ $match['away_team'] }}" class="w-8 h-8 mx-auto mb-1" onerror="this.style.display='none'">
-                                        <div class="text-sm font-medium">{{ Str::limit($match['away_team'], 12) }}</div>
+                                        <div class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ Str::limit($match['away_team'], 12) }}</div>
                                     </div>
                                 </div>
                                 @if($match['betting_available'])
