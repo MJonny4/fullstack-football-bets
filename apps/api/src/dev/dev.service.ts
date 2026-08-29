@@ -18,6 +18,7 @@ import { RESULT_ENGINE } from "./result-engine.provider.js";
 export class DevService {
   constructor(
     @Inject(RESULT_ENGINE) private readonly engine: ResultEngine,
+    @Inject(LeaderboardGateway)
     private readonly leaderboard: LeaderboardGateway,
   ) {}
 
@@ -42,7 +43,12 @@ export class DevService {
 
   async closeWindow() {
     this.ensureEnabled();
-    return closeBettingWindows(prisma, { now: new Date(), force: true });
+    const result = await closeBettingWindows(prisma, {
+      now: new Date(),
+      force: true,
+    });
+    await this.leaderboard.broadcast();
+    return result;
   }
 
   async resolveDue() {

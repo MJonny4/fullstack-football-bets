@@ -1,12 +1,12 @@
 # fullstack-football-bets
 
-Slice 1 is a self-contained virtual-coin football betting product for a fictional
-20-team league. Users can create an account, claim a team as DT, save a basic
-lineup, bet on weekly matches, and watch balances and the leaderboard update as
-matches settle. A separate live league table tracks club results, while the
-bettor leaderboard ranks settled betting performance instead of wallet size.
-Results come from a weighted-random stub behind the same `ResultEngine`
-interface that the later simulation engine will implement.
+This is a self-contained virtual-coin football betting product for a fictional
+20-team league. Users can create an account, explore every club and its
+persistent 23-player squad, claim a team as DT, publish a position-aware XI,
+and bet on weekly matches. Lineup changes recalculate team strength and open
+odds, accepted prices remain locked, and eligible bets can be cancelled for a
+full refund. Results come from a weighted-random stub behind the same
+`ResultEngine` interface that the later simulation engine will implement.
 
 ## Stack
 
@@ -34,6 +34,12 @@ The detailed decisions are in [docs/design](docs/design).
 - Live Socket.IO replacement snapshots for both tables, including settlements
   with no winner payout; production worker events cross Redis pub/sub.
 - Public ranking payloads use manager aliases and do not expose account emails.
+- URL-addressable public club profiles with locally bundled country flags,
+  FIFA-style player attributes, usual XIs, and alternative formations.
+- A private manager pitch for six formations, server-validated position
+  penalties, draft saving, explicit publishing, and live rating calculation.
+- Append-only odds revisions, own-team betting restrictions, audited
+  cancellation refunds, and immutable XIs locked one hour before kickoff.
 
 ## Run the complete application
 

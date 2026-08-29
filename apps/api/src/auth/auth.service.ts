@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  Inject,
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -21,7 +22,9 @@ function startingBalance(): number {
 @Injectable()
 export class AuthService {
   constructor(
+    @Inject(JwtService)
     private readonly jwt: JwtService,
+    @Inject(LeaderboardGateway)
     private readonly leaderboard: LeaderboardGateway,
   ) {}
 

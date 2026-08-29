@@ -40,6 +40,7 @@ describe("buildBettingLeaderboard", () => {
         aggregate("winner", "WON", 2, 150, 330),
         aggregate("winner", "LOST", 1, 50, 0),
         aggregate("winner", "PENDING", 3, 90, 0),
+        aggregate("winner", "CANCELLED", 2, 40, 0),
         aggregate("new", "PENDING", 1, 25, 0),
       ],
     );
