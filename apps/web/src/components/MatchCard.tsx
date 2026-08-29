@@ -10,12 +10,14 @@ import {
   toNumber,
 } from '../lib/format';
 import type { Match, OddsQuote, PlaceBetInput } from '../types';
-import { Alert, Icon, StatusPill, TeamCrest } from './ui';
+import { Alert, Icon, StatusPill } from './ui';
+import { TeamLink } from './TeamLink';
 
 interface MatchCardProps {
   match: Match;
   balance: number;
   bettingClosed: boolean;
+  ownTeamInvolved: boolean;
   onPlaceBet: (input: PlaceBetInput) => Promise<void>;
 }
 
@@ -52,7 +54,7 @@ function groupQuotes(quotes: OddsQuote[]): MarketGroup[] {
   });
 }
 
-export function MatchCard({ match, balance, bettingClosed, onPlaceBet }: MatchCardProps) {
+export function MatchCard({ match, balance, bettingClosed, ownTeamInvolved, onPlaceBet }: MatchCardProps) {
   const groups = useMemo(() => groupQuotes(match.odds ?? []), [match.odds]);
   const [activeMarket, setActiveMarket] = useState(groups[0]?.key ?? '');
   const [selected, setSelected] = useState<OddsQuote | null>(null);
@@ -76,7 +78,7 @@ export function MatchCard({ match, balance, bettingClosed, onPlaceBet }: MatchCa
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!selected || !isAffordable || bettingClosed || isResolved) return;
+    if (!selected || !isAffordable || bettingClosed || isResolved || ownTeamInvolved) return;
 
     setSubmitting(true);
     setMessage(null);
@@ -113,10 +115,7 @@ export function MatchCard({ match, balance, bettingClosed, onPlaceBet }: MatchCa
 
       <div className="px-5 pb-5 pt-6 sm:px-6 sm:pb-6">
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-5">
-          <div className="flex min-w-0 flex-col items-center gap-3 text-center">
-            <TeamCrest team={match.homeTeam} />
-            <span className="line-clamp-2 text-sm font-extrabold leading-5 text-ink">{match.homeTeam.name}</span>
-          </div>
+          <TeamLink className="min-w-0" team={match.homeTeam} />
           <div className="text-center">
             {score ? (
               <div className="font-display text-3xl font-bold tracking-tight text-ink">{score}</div>
@@ -125,10 +124,7 @@ export function MatchCard({ match, balance, bettingClosed, onPlaceBet }: MatchCa
             )}
             <div className="mt-2 text-[10px] font-bold uppercase tracking-[.16em] text-slate-400">{score ? 'Full time' : 'Fixture'}</div>
           </div>
-          <div className="flex min-w-0 flex-col items-center gap-3 text-center">
-            <TeamCrest team={match.awayTeam} />
-            <span className="line-clamp-2 text-sm font-extrabold leading-5 text-ink">{match.awayTeam.name}</span>
-          </div>
+          <TeamLink className="min-w-0" team={match.awayTeam} />
         </div>
 
         {groups.length > 0 ? (
@@ -159,7 +155,7 @@ export function MatchCard({ match, balance, bettingClosed, onPlaceBet }: MatchCa
                     <button
                       aria-pressed={chosen}
                       className={`group min-w-0 rounded-xl border px-2 py-2.5 text-left transition disabled:cursor-not-allowed disabled:opacity-55 ${chosen ? 'border-pitch-600 bg-pitch-50 ring-2 ring-pitch-100' : 'border-slate-200 bg-white hover:border-pitch-300 hover:bg-pitch-50/50'}`}
-                      disabled={bettingClosed || isResolved}
+                      disabled={bettingClosed || isResolved || ownTeamInvolved}
                       key={`${quote.market}:${quote.selection}`}
                       onClick={() => {
                         setSelected(quote);
@@ -181,7 +177,7 @@ export function MatchCard({ match, balance, bettingClosed, onPlaceBet }: MatchCa
                   <span className="sr-only">Stake in coins</span>
                   <input
                     className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 pr-16 text-sm font-bold text-ink outline-none transition placeholder:font-medium placeholder:text-slate-400 focus:border-pitch-500 focus:bg-white focus:ring-4 focus:ring-pitch-100 disabled:cursor-not-allowed disabled:opacity-60"
-                    disabled={bettingClosed || isResolved}
+                    disabled={bettingClosed || isResolved || ownTeamInvolved}
                     inputMode="numeric"
                     max={Math.floor(balance)}
                     min="1"
@@ -199,7 +195,7 @@ export function MatchCard({ match, balance, bettingClosed, onPlaceBet }: MatchCa
                 </label>
                 <button
                   className="min-w-28 rounded-xl bg-pitch-700 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-pitch-800 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
-                  disabled={!selected || !isAffordable || bettingClosed || isResolved || submitting}
+                  disabled={!selected || !isAffordable || bettingClosed || isResolved || ownTeamInvolved || submitting}
                   type="submit"
                 >
                   {submitting ? 'Placing…' : 'Place bet'}
@@ -207,7 +203,9 @@ export function MatchCard({ match, balance, bettingClosed, onPlaceBet }: MatchCa
               </div>
 
               <div className="mt-2 min-h-5 text-xs">
-                {bettingClosed || isResolved ? (
+                {ownTeamInvolved ? (
+                  <span className="font-semibold text-amber-700">Managers cannot bet on matches involving their own club.</span>
+                ) : bettingClosed || isResolved ? (
                   <span className="font-semibold text-slate-400">Betting is unavailable for this match.</span>
                 ) : stake && !isValidStake ? (
                   <span className="font-semibold text-rose-600">Enter a whole-number stake of at least 1 coin.</span>

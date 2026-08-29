@@ -909,4 +909,120 @@ describe("Slice 1 HTTP lifecycle", () => {
       payout: null,
     });
   });
+
+  it("pages a club's complete match history newest first", async () => {
+    const http = app.getHttpServer();
+    const signup = await request(http)
+      .post("/api/auth/signup")
+      .send({
+        email: "history@example.com",
+        password: "secure-history-password",
+      })
+      .expect(201);
+    const token = signup.body.accessToken as string;
+    const teams = await request(http)
+      .get("/api/teams")
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+    const subject = teams.body[0] as { id: string };
+    const opponent = teams.body[1] as { id: string };
+    const unrelatedHome = teams.body[2] as { id: string };
+    const unrelatedAway = teams.body[3] as { id: string };
+
+    for (let index = 0; index < 11; index += 1) {
+      const scheduledAt = new Date(Date.UTC(2026, 0, index + 1, 15));
+      await prisma.round.create({
+        data: {
+          weekNumber: index + 1,
+          lifecycleKey: `history-round-${index + 1}`,
+          opensAt: new Date(Date.UTC(2025, 11, index + 1, 9)),
+          bettingClosesAt: new Date(Date.UTC(2025, 11, index + 1, 23)),
+          status: "SETTLED",
+          matches: {
+            create: {
+              homeTeamId: index % 2 === 0 ? subject.id : opponent.id,
+              awayTeamId: index % 2 === 0 ? opponent.id : subject.id,
+              scheduledDay: index % 2 === 0 ? "SAT" : "SUN",
+              scheduledAt,
+              lineupLocksAt: new Date(scheduledAt.getTime() - 60 * 60 * 1_000),
+              status: "RESOLVED",
+              resultPayload: {
+                homeScore: index % 3,
+                awayScore: (index + 1) % 3,
+                homeCards: 1,
+                awayCards: 2,
+                homeCorners: 4,
+                awayCorners: 5,
+              },
+              resolvedAt: scheduledAt,
+            },
+          },
+        },
+      });
+    }
+    const firstRound = await prisma.round.findUniqueOrThrow({
+      where: { weekNumber: 1 },
+      select: { id: true },
+    });
+    const unrelatedMatch = await prisma.match.create({
+      data: {
+        roundId: firstRound.id,
+        homeTeamId: unrelatedHome.id,
+        awayTeamId: unrelatedAway.id,
+        scheduledDay: "SAT",
+        scheduledAt: new Date("2026-01-01T17:00:00.000Z"),
+        lineupLocksAt: new Date("2026-01-01T16:00:00.000Z"),
+        status: "RESOLVED",
+        resultPayload: {
+          homeScore: 0,
+          awayScore: 0,
+          homeCards: 0,
+          awayCards: 0,
+          homeCorners: 0,
+          awayCorners: 0,
+        },
+        resolvedAt: new Date("2026-01-01T18:45:00.000Z"),
+      },
+    });
+
+    const firstPage = await request(http)
+      .get(`/api/teams/${subject.id}/history`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+    expect(firstPage.body.matches).toHaveLength(10);
+    expect(firstPage.body.matches.map(({ weekNumber }: { weekNumber: number }) => weekNumber)).toEqual([
+      11, 10, 9, 8, 7, 6, 5, 4, 3, 2,
+    ]);
+    expect(firstPage.body.matches[0]).toMatchObject({
+      status: "RESOLVED",
+      homeTeam: expect.objectContaining({ id: subject.id }),
+      awayTeam: expect.objectContaining({ id: opponent.id }),
+      result: expect.objectContaining({ homeScore: 1, awayScore: 2 }),
+    });
+    expect(firstPage.body.nextCursor).toEqual(expect.any(String));
+
+    const secondPage = await request(http)
+      .get(`/api/teams/${subject.id}/history`)
+      .query({ cursor: firstPage.body.nextCursor })
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+    expect(secondPage.body).toMatchObject({ nextCursor: null });
+    expect(secondPage.body.matches).toHaveLength(1);
+    expect(secondPage.body.matches[0].weekNumber).toBe(1);
+
+    await request(http)
+      .get(`/api/teams/${subject.id}/history`)
+      .query({ cursor: "not-a-valid-cursor" })
+      .set("Authorization", `Bearer ${token}`)
+      .expect(400);
+    await request(http)
+      .get(`/api/teams/${subject.id}/history`)
+      .query({ cursor: unrelatedMatch.id })
+      .set("Authorization", `Bearer ${token}`)
+      .expect(400);
+    await request(http)
+      .get("/api/teams/not-a-real-team/history")
+      .set("Authorization", `Bearer ${token}`)
+      .expect(404);
+  });
 });

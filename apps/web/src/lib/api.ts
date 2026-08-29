@@ -3,11 +3,16 @@ import type {
   Bet,
   BettingLeaderboardEntry,
   LeagueStandings,
+  LineupDraftInput,
   LineupInput,
+  ManagerTeamProfile,
   PlaceBetInput,
   PlaceBetResponse,
+  PublishLineupResult,
   Round,
   Team,
+  TeamMatchHistoryPage,
+  TeamProfile,
   User,
 } from '../types';
 
@@ -116,6 +121,12 @@ export const api = {
     });
   },
 
+  cancelBet(betId: string) {
+    return request<PlaceBetResponse>(`/api/bets/${encodeURIComponent(betId)}`, {
+      method: 'DELETE',
+    });
+  },
+
   leaderboard() {
     return request<BettingLeaderboardEntry[]>('/api/leaderboard');
   },
@@ -126,6 +137,34 @@ export const api = {
 
   teams() {
     return request<Team[]>('/api/teams');
+  },
+
+  team(teamId: string) {
+    return request<TeamProfile>(`/api/teams/${encodeURIComponent(teamId)}`);
+  },
+
+  teamMatchHistory(teamId: string, cursor?: string) {
+    const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+    return request<TeamMatchHistoryPage>(
+      `/api/teams/${encodeURIComponent(teamId)}/history${query}`,
+    );
+  },
+
+  managerTeam() {
+    return request<ManagerTeamProfile>('/api/teams/me');
+  },
+
+  saveLineupDraft(input: LineupDraftInput) {
+    return request<ManagerTeamProfile>('/api/teams/me/draft', {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    });
+  },
+
+  publishLineup() {
+    return request<PublishLineupResult>('/api/teams/me/publish', {
+      method: 'POST',
+    });
   },
 
   claimTeam(teamId: string) {

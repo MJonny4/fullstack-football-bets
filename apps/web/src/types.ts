@@ -1,9 +1,15 @@
 import type {
   BetStatus,
   BettingLeaderboardEntryDto,
+  ManagerLineupDraftInput,
+  ManagerTeamProfileDto,
   Market,
   MatchResultPayload,
   MatchStatus,
+  PublicTeamProfileDto,
+  PublicTeamMatchHistoryPageDto,
+  PublicTeamSummaryDto,
+  PublishTeamLineupResultDto,
   RoundStatus,
   ScheduledDay,
   StandingsResponse,
@@ -31,15 +37,15 @@ export interface AuthResponse {
   user: User;
 }
 
-export interface Team {
-  id: string;
-  name: string;
-  crestImageUrl: string | null;
-  strengthRating: number;
+export interface Team extends PublicTeamSummaryDto {
   dtAssignment?: (DTAssignment & { user?: Pick<User, 'id' | 'email'> }) | null;
-  isClaimed?: boolean;
-  isMine?: boolean;
 }
+
+export type TeamProfile = PublicTeamProfileDto;
+export type TeamMatchHistoryPage = PublicTeamMatchHistoryPageDto;
+export type ManagerTeamProfile = ManagerTeamProfileDto;
+export type LineupDraftInput = ManagerLineupDraftInput;
+export type PublishLineupResult = PublishTeamLineupResultDto;
 
 export interface OddsQuote {
   market: Market;
@@ -65,6 +71,7 @@ export interface Match {
   id: string;
   scheduledDay: ScheduledDay;
   scheduledAt: string;
+  lineupLocksAt: string;
   status: MatchStatus;
   homeTeam: Team;
   awayTeam: Team;
@@ -89,8 +96,9 @@ export interface Bet {
   oddsTaken: Numeric;
   status: BetStatus;
   payout?: Numeric | null;
+  cancelledAt?: string | null;
   createdAt?: string;
-  match: Match & { round?: Pick<Round, 'id' | 'weekNumber'> };
+  match: Match & { round?: Pick<Round, 'id' | 'weekNumber' | 'status' | 'bettingClosesAt'> };
 }
 
 export type LeagueStandings = StandingsResponse;
@@ -112,5 +120,3 @@ export interface LineupInput {
   formation: string;
   tactics: Record<string, unknown>;
 }
-
-export type AppTab = 'matches' | 'standings' | 'bets' | 'leaderboard' | 'team';

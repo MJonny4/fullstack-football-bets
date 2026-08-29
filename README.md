@@ -35,7 +35,8 @@ The detailed decisions are in [docs/design](docs/design).
   with no winner payout; production worker events cross Redis pub/sub.
 - Public ranking payloads use manager aliases and do not expose account emails.
 - URL-addressable public club profiles with locally bundled country flags,
-  FIFA-style player attributes, usual XIs, and alternative formations.
+  FIFA-style player attributes, usual XIs, alternative formations, and a
+  paginated all-season match history.
 - A private manager pitch for six formations, server-validated position
   penalties, draft saving, explicit publishing, and live rating calculation.
 - Append-only odds revisions, own-team betting restrictions, audited
