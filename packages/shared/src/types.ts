@@ -4,13 +4,13 @@ export type RoundStatus = (typeof ROUND_STATUSES)[number];
 export const MATCH_STATUSES = ["SCHEDULED", "RESOLVED"] as const;
 export type MatchStatus = (typeof MATCH_STATUSES)[number];
 
-export const BET_STATUSES = ["PENDING", "WON", "LOST"] as const;
+export const BET_STATUSES = ["PENDING", "WON", "LOST", "CANCELLED"] as const;
 export type BetStatus = (typeof BET_STATUSES)[number];
 
 export const SCHEDULED_DAYS = ["SAT", "SUN"] as const;
 export type ScheduledDay = (typeof SCHEDULED_DAYS)[number];
 
-export const LEDGER_TYPES = ["TOPUP", "STAKE", "PAYOUT"] as const;
+export const LEDGER_TYPES = ["TOPUP", "STAKE", "PAYOUT", "REFUND"] as const;
 export type LedgerType = (typeof LEDGER_TYPES)[number];
 
 export interface TeamSummary {
@@ -18,6 +18,143 @@ export interface TeamSummary {
   name: string;
   crestImageUrl: string | null;
   strengthRating: number;
+}
+
+export interface PublicTeamSummaryDto extends TeamSummary {
+  slug: string;
+  abbreviation: string;
+  shortName: string;
+  primaryColor: string;
+  secondaryColor: string;
+  shirtTextColor: string;
+  isClaimed: boolean;
+  isMine: boolean;
+}
+
+interface PublicPlayerBaseDto {
+  id: string;
+  firstName: string;
+  lastName: string;
+  nationalityCode: string;
+  shirtNumber: number;
+  overall: number;
+  imageUrl: string | null;
+}
+
+export interface PublicGoalkeeperDto extends PublicPlayerBaseDto {
+  kind: "GOALKEEPER";
+  primaryPosition: "GK";
+  secondaryPositions: [];
+  attributes: GoalkeeperAttributes;
+}
+
+export interface PublicOutfieldPlayerDto extends PublicPlayerBaseDto {
+  kind: "OUTFIELD";
+  primaryPosition: OutfieldPosition;
+  secondaryPositions: OutfieldPosition[];
+  attributes: OutfieldAttributes;
+}
+
+export type PublicPlayerDto =
+  | PublicGoalkeeperDto
+  | PublicOutfieldPlayerDto;
+
+export interface PublicLineupAssignmentDto {
+  slotKey: string;
+  playerId: string;
+  slotPosition: PlayerPosition;
+  unit: LineupUnitGroup;
+  positionPenalty: number;
+  adjustedRating: number;
+}
+
+export interface PublicLineupRatingsDto {
+  overall: number;
+  attack: number;
+  midfield: number;
+  defense: number;
+  goalkeeper: number;
+}
+
+export interface PublicOfficialLineupDto extends PublicLineupRatingsDto {
+  id: string;
+  label: string;
+  formation: Formation;
+  publishedAt: string | null;
+  assignments: PublicLineupAssignmentDto[];
+}
+
+export interface PublicAlternativeLineupDto extends PublicLineupRatingsDto {
+  id: string;
+  label: string;
+  formation: Formation;
+}
+
+export interface PublicTeamStandingDto {
+  position: number;
+  played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  points: number;
+  form: Array<"W" | "D" | "L">;
+}
+
+export interface PublicTeamFixtureDto {
+  id: string;
+  weekNumber: number;
+  scheduledAt: string;
+  lineupLocksAt: string;
+  status: MatchStatus;
+  homeTeam: TeamSummary;
+  awayTeam: TeamSummary;
+  result: MatchResultPayload | null;
+}
+
+export interface PublicTeamMatchHistoryPageDto {
+  matches: PublicTeamFixtureDto[];
+  nextCursor: string | null;
+}
+
+export interface PublicTeamProfileDto extends PublicTeamSummaryDto {
+  city: string;
+  stadiumName: string;
+  foundedYear: number;
+  attackRating: number;
+  midfieldRating: number;
+  defenseRating: number;
+  goalkeeperRating: number;
+  manager: { displayName: string } | null;
+  standing: PublicTeamStandingDto | null;
+  officialLineup: PublicOfficialLineupDto | null;
+  alternatives: PublicAlternativeLineupDto[];
+  squad: PublicPlayerDto[];
+  recentResults: PublicTeamFixtureDto[];
+  upcomingFixtures: PublicTeamFixtureDto[];
+}
+
+export interface ManagerLineupAssignmentInput {
+  slotKey: string;
+  playerId: string;
+}
+
+export interface ManagerLineupDraftInput {
+  formation: Formation;
+  assignments: ManagerLineupAssignmentInput[];
+}
+
+export interface ManagerTeamProfileDto extends PublicTeamProfileDto {
+  tactics: Record<string, unknown> | null;
+  draftLineup: PublicOfficialLineupDto | null;
+}
+
+export interface PublishTeamLineupResultDto {
+  changed: boolean;
+  repricedMatchIds: string[];
+  profile: ManagerTeamProfileDto;
 }
 
 export interface MatchContext {
@@ -52,7 +189,6 @@ export interface UserDto {
 export interface DTAssignmentDto {
   id: string;
   userId: string;
-  teamId: string;
   claimedAt: string;
   formation: string | null;
   tactics: Record<string, unknown> | null;
@@ -96,6 +232,7 @@ export interface BetDto {
   oddsTaken: number;
   status: BetStatus;
   payout: number | null;
+  cancelledAt: string | null;
   createdAt: string;
 }
 
@@ -133,3 +270,13 @@ export interface BettingLeaderboardEntryDto {
   hitRatePercent: number | null;
   provisional: boolean;
 }
+import type {
+  Formation,
+  LineupUnitGroup,
+} from "./formations.js";
+import type {
+  GoalkeeperAttributes,
+  OutfieldAttributes,
+  OutfieldPosition,
+  PlayerPosition,
+} from "./players.js";

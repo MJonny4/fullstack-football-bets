@@ -5,6 +5,7 @@ export * from "./users.js";
 export * from "./schedule.js";
 export * from "./result-engine.js";
 export * from "./lifecycle.js";
+export * from "./lineup-lock.js";
 export * from "./settlement.js";
 
 export {
@@ -14,6 +15,11 @@ export {
   LedgerType,
   Market,
   MatchStatus,
+  MatchSide,
+  PlayerPosition,
+  LineupSource,
+  LineupState,
+  LineupUnit,
   RoundStatus,
   ScheduledDay,
 } from "@prisma/client";
@@ -23,7 +29,12 @@ export type {
   LedgerEntry,
   Match,
   OddsSnapshot,
+  Player,
   Round,
   Team,
+  TeamLineup,
+  TeamLineupSlot,
+  MatchLineupSnapshot,
+  MatchLineupSnapshotSlot,
   User,
 } from "@prisma/client";
