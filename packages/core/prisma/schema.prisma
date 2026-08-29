@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RoundStatus {
+  OPEN
+  CLOSED
+  SETTLED
+}
+
+enum MatchStatus {
+  SCHEDULED
+  RESOLVED
+}
+
+enum ScheduledDay {
+  SAT
+  SUN
+}
+
+enum Market {
+  MATCH_RESULT
+  EXACT_SCORE
+  TOTAL_CARDS
+  TOTAL_CORNERS
+}
+
+enum BetStatus {
+  PENDING
+  WON
+  LOST
+}
+
+enum LedgerType {
+  TOPUP
+  STAKE
+  PAYOUT
+}
+
+model User {
+  id           String         @id @default(cuid())
+  email        String         @unique
+  passwordHash String
+  coinBalance  Int            @default(0)
+  createdAt    DateTime       @default(now())
+  bets         Bet[]
+  ledgerEntries LedgerEntry[]
+  dtAssignment DTAssignment?
+}
+
+model Team {
+  id             String        @id @default(cuid())
+  name           String        @unique
+  crestImageUrl  String?
+  strengthRating Int
+  dtAssignment   DTAssignment?
+  homeMatches    Match[]       @relation("HomeTeam")
+  awayMatches    Match[]       @relation("AwayTeam")
+}
+
+model DTAssignment {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  teamId    String   @unique
+  claimedAt DateTime @default(now())
+  formation String?
+  tactics   Json?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+}
+
+model Round {
+  id               String      @id @default(cuid())
+  weekNumber       Int         @unique
+  lifecycleKey     String      @unique
+  opensAt          DateTime
+  bettingClosesAt  DateTime
+  status           RoundStatus @default(OPEN)
+  matches          Match[]
+
+  @@index([status, bettingClosesAt])
+}
+
+model Match {
+  id            String        @id @default(cuid())
+  roundId       String
+  homeTeamId    String
+  awayTeamId    String
+  scheduledDay  ScheduledDay
+  scheduledAt   DateTime
+  status        MatchStatus   @default(SCHEDULED)
+  resultPayload Json?
+  resolvedAt    DateTime?
+  round         Round         @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  homeTeam      Team          @relation("HomeTeam", fields: [homeTeamId], references: [id], onDelete: Restrict)
+  awayTeam      Team          @relation("AwayTeam", fields: [awayTeamId], references: [id], onDelete: Restrict)
+  odds          OddsSnapshot[]
+  bets          Bet[]
+
+  @@index([roundId, status])
+  @@index([status, scheduledAt])
+  @@unique([roundId, homeTeamId, awayTeamId])
+}
+
+model OddsSnapshot {
+  id         String   @id @default(cuid())
+  matchId    String
+  market     Market
+  selection  String
+  odds       Decimal  @db.Decimal(10, 4)
+  computedAt DateTime @default(now())
+  match      Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([matchId, market, selection, computedAt(sort: Desc)])
+}
+
+model Bet {
+  id         String    @id @default(cuid())
+  userId     String
+  matchId    String
+  market     Market
+  selection  String
+  stake      Int
+  oddsTaken  Decimal   @db.Decimal(10, 4)
+  status     BetStatus @default(PENDING)
+  payout     Int?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match      Match     @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([matchId, status])
+}
+
+model LedgerEntry {
+  id           String     @id @default(cuid())
+  userId       String
+  type         LedgerType
+  amount       Int
+  balanceAfter Int
+  reference    String
+  createdAt    DateTime   @default(now())
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, reference])
+  @@index([userId, createdAt(sort: Desc)])
+}
