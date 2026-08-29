@@ -1,0 +1,49 @@
+{
+  "name": "@fb/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./prisma": {
+      "types": "./dist/prisma.js",
+      "import": "./dist/prisma.js",
+      "default": "./dist/prisma.js"
+    }
+  },
+  "files": [
+    "dist",
+    "prisma"
+  ],
+  "scripts": {
+    "build": "prisma generate && tsc -p tsconfig.json",
+    "typecheck": "prisma generate && tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate deploy",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "seed": "prisma db seed"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@fb/shared": "workspace:*",
+    "@prisma/client": "^6.8.2",
+    "luxon": "^3.6.1"
+  },
+  "devDependencies": {
+    "@types/luxon": "^3.6.2",
+    "@types/node": "^24.3.0",
+    "prisma": "^6.8.2",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.4"
+  }
+}

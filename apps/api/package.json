@@ -1,0 +1,45 @@
+{
+  "name": "@fb/api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "NestJS API for fullstack-football-bets",
+  "main": "dist/main.js",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/main.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx test/prepare-integration.ts && vitest run"
+  },
+  "dependencies": {
+    "@fb/core": "workspace:*",
+    "@fb/shared": "workspace:*",
+    "@nestjs/common": "^11.1.6",
+    "@nestjs/core": "^11.1.6",
+    "@nestjs/jwt": "^11.0.0",
+    "@nestjs/platform-express": "^11.1.6",
+    "@nestjs/platform-socket.io": "^11.1.6",
+    "@nestjs/websockets": "^11.1.6",
+    "bcryptjs": "^3.0.2",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
+    "dotenv": "^17.2.2",
+    "ioredis": "^5.7.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "^11.1.6",
+    "@swc/core": "^1.13.5",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.3.0",
+    "@types/supertest": "^6.0.3",
+    "supertest": "^7.1.4",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "unplugin-swc": "^1.5.7",
+    "vitest": "^3.2.4"
+  }
+}
