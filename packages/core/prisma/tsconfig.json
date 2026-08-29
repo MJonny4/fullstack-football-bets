@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "noEmit": true
+  },
+  "include": ["seed.ts", "team-seed-data.ts"],
+  "exclude": ["data", "migrations", "node_modules"]
+}

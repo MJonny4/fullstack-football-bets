@@ -7,6 +7,7 @@ import {
   type ResultEngine,
 } from "@fb/shared";
 import { MatchNotFoundError } from "./errors.js";
+import { lockDueMatchLineups } from "./lineup-lock.js";
 import {
   applyWalletTransaction,
   type BalanceChange,
@@ -30,6 +31,7 @@ export interface ResolveDueOptions {
 export interface ResolveDueResult {
   matches: SettlementResult[];
   balanceChanges: BalanceChange[];
+  lockedMatchIds: string[];
 }
 
 function assertResultPayload(result: MatchResultPayload): void {
@@ -45,9 +47,17 @@ export async function resolveAndSettleMatch(
   matchId: string,
   engine: ResultEngine,
 ): Promise<SettlementResult> {
+  // Direct callers receive the same deadline guarantee as the due-match sweep.
+  // Future matches forced by development controls intentionally keep the
+  // legacy fallback because their real lineup deadline has not occurred.
+  await lockDueMatchLineups(db, { now: new Date() });
   const candidate = await db.match.findUnique({
     where: { id: matchId },
-    include: { homeTeam: true, awayTeam: true },
+    include: {
+      homeTeam: true,
+      awayTeam: true,
+      lineupSnapshots: { select: { side: true, overallRating: true } },
+    },
   });
   if (!candidate) throw new MatchNotFoundError(matchId);
   if (candidate.status === "RESOLVED") {
@@ -62,6 +72,13 @@ export async function resolveAndSettleMatch(
     };
   }
 
+  const homeSnapshot = candidate.lineupSnapshots.find(
+    ({ side }) => side === "HOME",
+  );
+  const awaySnapshot = candidate.lineupSnapshots.find(
+    ({ side }) => side === "AWAY",
+  );
+
   const context: MatchContext = {
     id: candidate.id,
     roundId: candidate.roundId,
@@ -70,13 +87,17 @@ export async function resolveAndSettleMatch(
       id: candidate.homeTeam.id,
       name: candidate.homeTeam.name,
       crestImageUrl: candidate.homeTeam.crestImageUrl,
-      strengthRating: candidate.homeTeam.strengthRating,
+      strengthRating: Number(
+        homeSnapshot?.overallRating ?? candidate.homeTeam.strengthRating,
+      ),
     },
     awayTeam: {
       id: candidate.awayTeam.id,
       name: candidate.awayTeam.name,
       crestImageUrl: candidate.awayTeam.crestImageUrl,
-      strengthRating: candidate.awayTeam.strengthRating,
+      strengthRating: Number(
+        awaySnapshot?.overallRating ?? candidate.awayTeam.strengthRating,
+      ),
     },
   };
   const result = await engine.resolve(context);
@@ -110,14 +131,17 @@ export async function resolveAndSettleMatch(
       orderBy: { id: "asc" },
     });
     const balanceChanges: BalanceChange[] = [];
+    let gradedBetCount = 0;
 
     for (const bet of pendingBets) {
       const won = gradeBet(bet.market, bet.selection, result);
       const payout = won ? calculatePayout(bet.stake, bet.oddsTaken) : 0;
-      await tx.bet.update({
-        where: { id: bet.id },
+      const graded = await tx.bet.updateMany({
+        where: { id: bet.id, status: "PENDING" },
         data: { status: won ? "WON" : "LOST", payout },
       });
+      if (graded.count === 0) continue;
+      gradedBetCount += 1;
 
       if (payout > 0) {
         const change = await applyWalletTransaction(
@@ -149,7 +173,7 @@ export async function resolveAndSettleMatch(
       roundId: candidate.roundId,
       roundSettled,
       result,
-      gradedBetCount: pendingBets.length,
+      gradedBetCount,
       balanceChanges,
     };
   }, { maxWait: 10_000, timeout: 30_000 });
@@ -162,6 +186,7 @@ export async function resolveDueMatches(
 ): Promise<ResolveDueResult> {
   const now = options.now ?? new Date();
   if (Number.isNaN(now.getTime())) throw new RangeError("now is invalid");
+  const locked = await lockDueMatchLineups(db, { now });
 
   const dueMatches = await db.match.findMany({
     where: {
@@ -179,5 +204,6 @@ export async function resolveDueMatches(
   return {
     matches,
     balanceChanges: matches.flatMap(({ balanceChanges }) => balanceChanges),
+    lockedMatchIds: locked.lockedMatchIds,
   };
 }

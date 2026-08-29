@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
+import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 import { Redis } from "ioredis";
 import { LeaderboardGateway } from "./leaderboard.gateway.js";
 
@@ -9,7 +9,10 @@ export class RedisLeaderboardBridge implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RedisLeaderboardBridge.name);
   private subscriber?: Redis;
 
-  constructor(private readonly gateway: LeaderboardGateway) {}
+  constructor(
+    @Inject(LeaderboardGateway)
+    private readonly gateway: LeaderboardGateway,
+  ) {}
 
   async onModuleInit() {
     const url = process.env.REDIS_URL;

@@ -34,104 +34,282 @@ enum BetStatus {
   PENDING
   WON
   LOST
+  CANCELLED
 }
 
 enum LedgerType {
   TOPUP
   STAKE
   PAYOUT
+  REFUND
+}
+
+enum PlayerPosition {
+  GK
+  RB
+  CB
+  LB
+  CDM
+  CM
+  CAM
+  RM
+  LM
+  RW
+  LW
+  ST
+}
+
+enum LineupSource {
+  SYSTEM
+  MANAGER
+}
+
+enum LineupState {
+  DRAFT
+  ACTIVE
+  ALTERNATIVE
+  ARCHIVED
+}
+
+enum LineupUnit {
+  GK
+  DEF
+  MID
+  ATT
+}
+
+enum MatchSide {
+  HOME
+  AWAY
 }
 
 model User {
-  id           String         @id @default(cuid())
-  email        String         @unique
-  passwordHash String
-  coinBalance  Int            @default(0)
-  createdAt    DateTime       @default(now())
-  bets         Bet[]
+  id            String        @id @default(cuid())
+  email         String        @unique
+  passwordHash  String
+  coinBalance   Int           @default(0)
+  createdAt     DateTime      @default(now())
+  bets          Bet[]
   ledgerEntries LedgerEntry[]
-  dtAssignment DTAssignment?
+  dtAssignment  DTAssignment?
 }
 
 model Team {
-  id             String        @id @default(cuid())
-  name           String        @unique
-  crestImageUrl  String?
-  strengthRating Int
-  dtAssignment   DTAssignment?
-  homeMatches    Match[]       @relation("HomeTeam")
-  awayMatches    Match[]       @relation("AwayTeam")
+  id                      String                @id @default(cuid())
+  name                    String                @unique
+  slug                    String                @unique
+  abbreviation            String                @unique
+  shortName               String
+  city                    String
+  stadiumName             String
+  foundedYear             Int
+  primaryColor            String
+  secondaryColor          String
+  shirtTextColor          String
+  crestImageUrl           String?
+  strengthRating          Decimal               @db.Decimal(5, 2)
+  attackRating            Decimal               @db.Decimal(5, 2)
+  midfieldRating          Decimal               @db.Decimal(5, 2)
+  defenseRating           Decimal               @db.Decimal(5, 2)
+  goalkeeperRating        Decimal               @db.Decimal(5, 2)
+  currentOfficialLineupId String?               @unique
+  currentOfficialLineup   TeamLineup?           @relation("CurrentOfficialLineup", fields: [currentOfficialLineupId], references: [id], onDelete: SetNull)
+  dtAssignment            DTAssignment?
+  players                 Player[]
+  lineups                 TeamLineup[]          @relation("TeamLineups")
+  homeMatches             Match[]               @relation("HomeTeam")
+  awayMatches             Match[]               @relation("AwayTeam")
+  lineupSnapshots         MatchLineupSnapshot[]
 }
 
 model DTAssignment {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  teamId    String   @unique
-  claimedAt DateTime @default(now())
-  formation String?
-  tactics   Json?
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  id            String      @id @default(cuid())
+  userId        String      @unique
+  teamId        String      @unique
+  draftLineupId String?     @unique
+  claimedAt     DateTime    @default(now())
+  formation     String?
+  tactics       Json?
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team          Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  draftLineup   TeamLineup? @relation("AssignmentDraft", fields: [draftLineupId], references: [id], onDelete: SetNull)
+}
+
+model Player {
+  id                 String                    @id @default(cuid())
+  generationKey      String                    @unique
+  teamId             String
+  firstName          String
+  lastName           String
+  nationalityCode    String                    @db.Char(2)
+  shirtNumber        Int
+  primaryPosition    PlayerPosition
+  secondaryPositions PlayerPosition[]          @default([])
+  overallRating      Int
+  imageUrl           String?
+  pace               Int?
+  shooting           Int?
+  passing            Int?
+  dribbling          Int?
+  defending          Int?
+  physical           Int?
+  diving             Int?
+  handling           Int?
+  kicking            Int?
+  reflexes           Int?
+  speed              Int?
+  positioning        Int?
+  createdAt          DateTime                  @default(now())
+  team               Team                      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  lineupSlots        TeamLineupSlot[]
+  snapshotSlots      MatchLineupSnapshotSlot[]
+
+  @@unique([teamId, shirtNumber])
+  @@index([teamId, primaryPosition])
+}
+
+model TeamLineup {
+  id                 String                @id @default(cuid())
+  generationKey      String?               @unique
+  teamId             String
+  label              String
+  formation          String
+  source             LineupSource
+  state              LineupState
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  publishedAt        DateTime?
+  team               Team                  @relation("TeamLineups", fields: [teamId], references: [id], onDelete: Cascade)
+  slots              TeamLineupSlot[]
+  officialForTeam    Team?                 @relation("CurrentOfficialLineup")
+  draftForAssignment DTAssignment?         @relation("AssignmentDraft")
+  snapshots          MatchLineupSnapshot[]
+
+  @@index([teamId, state])
+}
+
+model TeamLineupSlot {
+  id           String         @id @default(cuid())
+  lineupId     String
+  playerId     String
+  slotKey      String
+  sortOrder    Int
+  slotPosition PlayerPosition
+  unit         LineupUnit
+  lineup       TeamLineup     @relation(fields: [lineupId], references: [id], onDelete: Cascade)
+  player       Player         @relation(fields: [playerId], references: [id], onDelete: Restrict)
+
+  @@unique([lineupId, slotKey])
+  @@unique([lineupId, playerId])
+  @@index([playerId])
 }
 
 model Round {
-  id               String      @id @default(cuid())
-  weekNumber       Int         @unique
-  lifecycleKey     String      @unique
-  opensAt          DateTime
-  bettingClosesAt  DateTime
-  status           RoundStatus @default(OPEN)
-  matches          Match[]
+  id              String      @id @default(cuid())
+  weekNumber      Int         @unique
+  lifecycleKey    String      @unique
+  opensAt         DateTime
+  bettingClosesAt DateTime
+  status          RoundStatus @default(OPEN)
+  matches         Match[]
 
   @@index([status, bettingClosesAt])
 }
 
 model Match {
-  id            String        @id @default(cuid())
-  roundId       String
-  homeTeamId    String
-  awayTeamId    String
-  scheduledDay  ScheduledDay
-  scheduledAt   DateTime
-  status        MatchStatus   @default(SCHEDULED)
-  resultPayload Json?
-  resolvedAt    DateTime?
-  round         Round         @relation(fields: [roundId], references: [id], onDelete: Cascade)
-  homeTeam      Team          @relation("HomeTeam", fields: [homeTeamId], references: [id], onDelete: Restrict)
-  awayTeam      Team          @relation("AwayTeam", fields: [awayTeamId], references: [id], onDelete: Restrict)
-  odds          OddsSnapshot[]
-  bets          Bet[]
+  id              String                @id @default(cuid())
+  roundId         String
+  homeTeamId      String
+  awayTeamId      String
+  scheduledDay    ScheduledDay
+  scheduledAt     DateTime
+  lineupLocksAt   DateTime
+  status          MatchStatus           @default(SCHEDULED)
+  resultPayload   Json?
+  resolvedAt      DateTime?
+  round           Round                 @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  homeTeam        Team                  @relation("HomeTeam", fields: [homeTeamId], references: [id], onDelete: Restrict)
+  awayTeam        Team                  @relation("AwayTeam", fields: [awayTeamId], references: [id], onDelete: Restrict)
+  odds            OddsSnapshot[]
+  bets            Bet[]
+  lineupSnapshots MatchLineupSnapshot[]
 
+  @@unique([roundId, homeTeamId, awayTeamId])
   @@index([roundId, status])
   @@index([status, scheduledAt])
-  @@unique([roundId, homeTeamId, awayTeamId])
+  @@index([status, lineupLocksAt])
+}
+
+model MatchLineupSnapshot {
+  id               String                    @id @default(cuid())
+  matchId          String
+  teamId           String
+  side             MatchSide
+  sourceLineupId   String
+  formation        String
+  lineupDeadline   DateTime
+  lockedAt         DateTime                  @default(now())
+  overallRating    Decimal                   @db.Decimal(5, 2)
+  attackRating     Decimal                   @db.Decimal(5, 2)
+  midfieldRating   Decimal                   @db.Decimal(5, 2)
+  defenseRating    Decimal                   @db.Decimal(5, 2)
+  goalkeeperRating Decimal                   @db.Decimal(5, 2)
+  match            Match                     @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  team             Team                      @relation(fields: [teamId], references: [id], onDelete: Restrict)
+  sourceLineup     TeamLineup                @relation(fields: [sourceLineupId], references: [id], onDelete: Restrict)
+  slots            MatchLineupSnapshotSlot[]
+
+  @@unique([matchId, side])
+  @@index([teamId, lockedAt(sort: Desc)])
+}
+
+model MatchLineupSnapshotSlot {
+  id               String              @id @default(cuid())
+  snapshotId       String
+  playerId         String
+  slotKey          String
+  sortOrder        Int
+  assignedPosition PlayerPosition
+  unit             LineupUnit
+  sourceOverall    Int
+  positionPenalty  Int
+  adjustedRating   Int
+  snapshot         MatchLineupSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  player           Player              @relation(fields: [playerId], references: [id], onDelete: Restrict)
+
+  @@unique([snapshotId, slotKey])
+  @@unique([snapshotId, playerId])
+  @@index([playerId])
 }
 
 model OddsSnapshot {
-  id         String   @id @default(cuid())
-  matchId    String
-  market     Market
-  selection  String
-  odds       Decimal  @db.Decimal(10, 4)
-  computedAt DateTime @default(now())
-  match      Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  matchId     String
+  revisionKey String?
+  market      Market
+  selection   String
+  odds        Decimal  @db.Decimal(10, 4)
+  computedAt  DateTime @default(now())
+  match       Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
 
+  @@unique([matchId, revisionKey, market, selection])
   @@index([matchId, market, selection, computedAt(sort: Desc)])
 }
 
 model Bet {
-  id         String    @id @default(cuid())
-  userId     String
-  matchId    String
-  market     Market
-  selection  String
-  stake      Int
-  oddsTaken  Decimal   @db.Decimal(10, 4)
-  status     BetStatus @default(PENDING)
-  payout     Int?
-  createdAt  DateTime  @default(now())
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  match      Match     @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  id          String    @id @default(cuid())
+  userId      String
+  matchId     String
+  market      Market
+  selection   String
+  stake       Int
+  oddsTaken   Decimal   @db.Decimal(10, 4)
+  status      BetStatus @default(PENDING)
+  payout      Int?
+  cancelledAt DateTime?
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match       Match     @relation(fields: [matchId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([matchId, status])

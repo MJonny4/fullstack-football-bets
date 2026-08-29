@@ -8,10 +8,11 @@ import { EmptyState, Icon, StatusPill } from './ui';
 interface MatchesPageProps {
   round: Round | null;
   balance: number;
+  managedTeamId: string | null;
   onPlaceBet: (input: PlaceBetInput) => Promise<void>;
 }
 
-export function MatchesPage({ round, balance, onPlaceBet }: MatchesPageProps) {
+export function MatchesPage({ round, balance, managedTeamId, onPlaceBet }: MatchesPageProps) {
   const countdown = useCountdown(round?.bettingClosesAt ?? '');
   const bettingClosed = !round || round.status.toUpperCase() !== 'OPEN' || countdown.isElapsed;
 
@@ -86,6 +87,7 @@ export function MatchesPage({ round, balance, onPlaceBet }: MatchesPageProps) {
                     bettingClosed={bettingClosed}
                     key={match.id}
                     match={match}
+                    ownTeamInvolved={managedTeamId === match.homeTeam.id || managedTeamId === match.awayTeam.id}
                     onPlaceBet={onPlaceBet}
                   />
                 ))}

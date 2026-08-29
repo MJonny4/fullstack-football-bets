@@ -138,17 +138,19 @@ export async function openNextRound(
           awayTeamId: pairing.awayTeamId,
           scheduledDay: pairing.scheduledDay,
           scheduledAt: scheduledAt.toJSDate(),
+          lineupLocksAt: scheduledAt.minus({ hours: 1 }).toJSDate(),
         },
       });
       matchIds.push(match.id);
 
       const quotes = createOddsQuotes(
-        pairing.homeTeam.strengthRating,
-        pairing.awayTeam.strengthRating,
+        Number(pairing.homeTeam.strengthRating),
+        Number(pairing.awayTeam.strengthRating),
       );
       await tx.oddsSnapshot.createMany({
         data: quotes.map(({ market, selection, odds }) => ({
           matchId: match.id,
+          revisionKey: `round:${round.id}:initial`,
           market,
           selection,
           odds: new Prisma.Decimal(odds),
@@ -203,7 +205,7 @@ export async function closeBettingWindows(
       data: { status: "CLOSED" },
     });
     return { closedRoundIds: ids };
-  });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 }
 
 export const closeExpiredRounds = closeBettingWindows;

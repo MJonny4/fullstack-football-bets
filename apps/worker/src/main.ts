@@ -86,14 +86,22 @@ async function processJob(job: Job): Promise<unknown> {
       );
       return result;
     }
-    case JOB_NAMES.CLOSE_WINDOWS:
-      return closeBettingWindows(prisma, { now });
+    case JOB_NAMES.CLOSE_WINDOWS: {
+      const result = await closeBettingWindows(prisma, { now });
+      await publishLiveDataChange(
+        [],
+        JOB_NAMES.CLOSE_WINDOWS,
+        result.closedRoundIds.length > 0,
+      );
+      return result;
+    }
     case JOB_NAMES.RESOLVE_DUE: {
       const result = await resolveDueMatches(prisma, engine, { now });
       await publishLiveDataChange(
         result.balanceChanges,
         JOB_NAMES.RESOLVE_DUE,
-        result.matches.some(({ settled }) => settled),
+        result.lockedMatchIds.length > 0 ||
+          result.matches.some(({ settled }) => settled),
       );
       return result;
     }
@@ -104,6 +112,7 @@ async function processJob(job: Job): Promise<unknown> {
         resolved.balanceChanges,
         JOB_NAMES.RECOVER,
         closed.closedRoundIds.length > 0 ||
+          resolved.lockedMatchIds.length > 0 ||
           resolved.matches.some(({ settled }) => settled),
       );
       return { closed, resolved };

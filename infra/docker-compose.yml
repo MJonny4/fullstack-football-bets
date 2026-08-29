@@ -100,6 +100,21 @@ services:
       start_period: 10s
     restart: unless-stopped
 
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@football-bets.example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-local-pgadmin-password-change-me}
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+      - ./pgadmin-servers.json:/pgadmin4/servers.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
   web:
     build:
       context: ..
@@ -120,3 +135,4 @@ services:
 volumes:
   postgres-data:
   redis-data:
+  pgadmin-data:
