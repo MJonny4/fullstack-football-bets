@@ -108,7 +108,9 @@ function Dashboard() {
     }
 
     function receiveStandings(payload: unknown) {
-      if (isLeagueStandings(payload)) setStandings(payload);
+      if (!isLeagueStandings(payload)) return;
+      setStandings(payload);
+      window.dispatchEvent(new CustomEvent('football-bets:standings-update', { detail: payload }));
     }
 
     function receiveRound(payload: unknown) {

@@ -393,24 +393,34 @@ function MatchHistory({ teamId }: { teamId: string }) {
 
   useEffect(() => {
     let current = true;
-    setMatches([]);
-    setNextCursor(null);
-    setError(null);
-    setLoading(true);
-    void api.teamMatchHistory(teamId)
-      .then((page) => {
-        if (!current) return;
-        setMatches(page.matches);
-        setNextCursor(page.nextCursor);
-      })
-      .catch((cause: unknown) => {
-        if (current) setError(readableError(cause));
-      })
-      .finally(() => {
-        if (current) setLoading(false);
-      });
+    function loadHistory(clearExisting: boolean) {
+      if (clearExisting) {
+        setMatches([]);
+        setNextCursor(null);
+      }
+      setError(null);
+      setLoading(true);
+      void api.teamMatchHistory(teamId)
+        .then((page) => {
+          if (!current) return;
+          setMatches(page.matches);
+          setNextCursor(page.nextCursor);
+        })
+        .catch((cause: unknown) => {
+          if (current) setError(readableError(cause));
+        })
+        .finally(() => {
+          if (current) setLoading(false);
+        });
+    }
+    function receiveStandingsUpdate() {
+      loadHistory(false);
+    }
+    loadHistory(true);
+    window.addEventListener('football-bets:standings-update', receiveStandingsUpdate);
     return () => {
       current = false;
+      window.removeEventListener('football-bets:standings-update', receiveStandingsUpdate);
     };
   }, [teamId]);
 
@@ -518,11 +528,16 @@ export function TeamProfilePage() {
         load(false);
       }
     }
+    function receiveStandingsUpdate() {
+      load(false);
+    }
     load(true);
     window.addEventListener('football-bets:team-update', receiveTeamUpdate);
+    window.addEventListener('football-bets:standings-update', receiveStandingsUpdate);
     return () => {
       current = false;
       window.removeEventListener('football-bets:team-update', receiveTeamUpdate);
+      window.removeEventListener('football-bets:standings-update', receiveStandingsUpdate);
     };
   }, [teamId]);
 
