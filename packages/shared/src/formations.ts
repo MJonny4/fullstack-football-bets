@@ -109,6 +109,50 @@ export const FORMATION_TEMPLATES = {
   ],
 } as const satisfies Record<Formation, readonly FormationSlot[]>;
 
+/**
+ * Visual pitch rows are deliberately separate from rating units. A 4-2-3-1,
+ * for example, has two midfield lines even though both contribute to MID.
+ */
+export const FORMATION_PITCH_ROWS = {
+  "4-3-3": [
+    ["LW", "ST", "RW"],
+    ["LCM", "CM", "RCM"],
+    ["LB", "LCB", "RCB", "RB"],
+    ["GK"],
+  ],
+  "4-2-3-1": [
+    ["ST"],
+    ["LM", "CAM", "RM"],
+    ["LCDM", "RCDM"],
+    ["LB", "LCB", "RCB", "RB"],
+    ["GK"],
+  ],
+  "4-4-2": [
+    ["LST", "RST"],
+    ["LM", "LCM", "RCM", "RM"],
+    ["LB", "LCB", "RCB", "RB"],
+    ["GK"],
+  ],
+  "3-5-2": [
+    ["LST", "RST"],
+    ["LM", "LCM", "CDM", "RCM", "RM"],
+    ["LCB", "CB", "RCB"],
+    ["GK"],
+  ],
+  "3-4-3": [
+    ["LW", "ST", "RW"],
+    ["LM", "LCM", "RCM", "RM"],
+    ["LCB", "CB", "RCB"],
+    ["GK"],
+  ],
+  "5-3-2": [
+    ["LST", "RST"],
+    ["LCM", "CM", "RCM"],
+    ["LB", "LCB", "CB", "RCB", "RB"],
+    ["GK"],
+  ],
+} as const satisfies Record<Formation, readonly (readonly string[])[]>;
+
 type PositionPenalty = 0 | 1 | 2 | 3 | 4 | 5 | null;
 
 /** Directional cost of moving a player from their natural role to a slot. */

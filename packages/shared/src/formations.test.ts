@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   FORMATIONS,
+  FORMATION_PITCH_ROWS,
   FORMATION_TEMPLATES,
   calculateLineupRatings,
   getPositionPenalty,
@@ -42,6 +43,18 @@ describe("formation templates", () => {
       expect(slots.some(({ unit }) => unit === "MID")).toBe(true);
       expect(slots.some(({ unit }) => unit === "ATT")).toBe(true);
     }
+  });
+
+  it("keeps every visual pitch row in formation order without losing slots", () => {
+    for (const formation of FORMATIONS) {
+      const pitchSlots = FORMATION_PITCH_ROWS[formation].flat();
+      const templateSlots = FORMATION_TEMPLATES[formation].map(({ key }) => key);
+
+      expect(new Set(pitchSlots)).toEqual(new Set(templateSlots));
+      expect(pitchSlots).toHaveLength(11);
+    }
+
+    expect(FORMATION_PITCH_ROWS["4-2-3-1"]).toHaveLength(5);
   });
 });
 

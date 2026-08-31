@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import type {
-  PublicLineupAssignmentDto,
-  PublicPlayerDto,
-  PublicTeamFixtureDto,
+import {
+  FORMATION_PITCH_ROWS,
+  type PublicLineupAssignmentDto,
+  type PublicPlayerDto,
+  type PublicTeamFixtureDto,
 } from '@fb/shared';
 import { ApiError, api, readableError } from '../lib/api';
 import { formatDate } from '../lib/format';
@@ -196,7 +197,7 @@ function Pitch({
     );
   }
 
-  const rows = ['ATT', 'MID', 'DEF', 'GK'] as const;
+  const rows = FORMATION_PITCH_ROWS[lineup.formation];
   return (
     <div className="relative min-h-[36rem] overflow-hidden rounded-[2rem] border-4 border-white/80 bg-gradient-to-b from-[#16834e] to-[#0b6b3b] p-3 shadow-card sm:p-5">
       <div className="pointer-events-none absolute inset-3 rounded-[1.5rem] border-2 border-white/35" />
@@ -204,11 +205,12 @@ function Pitch({
       <div className="pointer-events-none absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/35" />
       <div className="pointer-events-none absolute inset-x-[28%] bottom-3 h-20 border-2 border-b-0 border-white/35" />
       <div className="pointer-events-none absolute inset-x-[28%] top-3 h-20 border-2 border-t-0 border-white/35" />
-      <div className="relative grid min-h-[33rem] grid-rows-4 gap-2 py-4">
-        {rows.map((unit) => (
-          <div className="flex items-center justify-evenly gap-1" key={unit}>
-            {lineup.assignments
-              .filter((assignment) => assignment.unit === unit)
+      <div className={`relative grid min-h-[33rem] gap-2 py-4 ${rows.length === 5 ? 'grid-rows-5' : 'grid-rows-4'}`}>
+        {rows.map((row) => (
+          <div className="flex items-center justify-evenly gap-1" key={row.join('-')}>
+            {row
+              .map((slotKey) => lineup.assignments.find((assignment) => assignment.slotKey === slotKey))
+              .filter((assignment): assignment is PublicLineupAssignmentDto => Boolean(assignment))
               .map((assignment) => {
                 const player = players.get(assignment.playerId);
                 return player ? (

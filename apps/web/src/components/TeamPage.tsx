@@ -1,5 +1,6 @@
 import {
   FORMATIONS,
+  FORMATION_PITCH_ROWS,
   FORMATION_TEMPLATES,
   calculateLineupRatings,
   getPositionPenalty,
@@ -7,7 +8,7 @@ import {
   type Formation,
   type PublicPlayerDto,
 } from '@fb/shared';
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type DragEvent, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { api, readableError } from '../lib/api';
 import { formatDate } from '../lib/format';
@@ -32,6 +33,36 @@ interface TeamPageProps {
 const MENTALITIES = ['balanced', 'attacking', 'defensive', 'counter'];
 const PRESSING = ['high', 'mid-block', 'low-block'];
 const TEMPOS = ['patient', 'balanced', 'direct'];
+const PLAYER_DRAG_TYPE = 'application/x-touchline-player';
+const SQUAD_FILTERS = ['ALL', 'GK', 'DEF', 'MID', 'ATT'] as const;
+
+type SquadFilter = (typeof SQUAD_FILTERS)[number];
+
+const ATTRIBUTE_LABELS: Record<string, string> = {
+  pace: 'PAC',
+  shooting: 'SHO',
+  passing: 'PAS',
+  dribbling: 'DRI',
+  defending: 'DEF',
+  physical: 'PHY',
+  diving: 'DIV',
+  handling: 'HAN',
+  kicking: 'KIC',
+  reflexes: 'REF',
+  speed: 'SPD',
+  positioning: 'POS',
+};
+
+function squadGroup(position: PublicPlayerDto['primaryPosition']): Exclude<SquadFilter, 'ALL'> {
+  if (position === 'GK') return 'GK';
+  if (['RB', 'CB', 'LB'].includes(position)) return 'DEF';
+  if (['RW', 'LW', 'ST'].includes(position)) return 'ATT';
+  return 'MID';
+}
+
+function draggedPlayerId(event: DragEvent<HTMLElement>): string {
+  return event.dataTransfer.getData(PLAYER_DRAG_TYPE) || event.dataTransfer.getData('text/plain');
+}
 
 function tacticsValue(
   tactics: Record<string, unknown> | null | undefined,
@@ -107,37 +138,81 @@ function ManagerPitch({
   profile,
   ratings,
   selectedSlot,
+  draggingPlayerId,
+  dragOverSlot,
   onSelectSlot,
+  onInspectPlayer,
+  onDragStart,
+  onDragEnd,
+  onDragOverSlot,
+  onDropPlayer,
 }: {
   profile: ManagerTeamProfile;
   ratings: ReturnType<typeof calculateLineupRatings<PublicPlayerDto>>;
   selectedSlot: string;
+  draggingPlayerId: string | null;
+  dragOverSlot: string | null;
   onSelectSlot: (slotKey: string) => void;
+  onInspectPlayer: (playerId: string) => void;
+  onDragStart: (playerId: string) => void;
+  onDragEnd: () => void;
+  onDragOverSlot: (slotKey: string | null) => void;
+  onDropPlayer: (playerId: string, slotKey: string) => void;
 }) {
-  const rows = ['ATT', 'MID', 'DEF', 'GK'] as const;
+  const assignmentsBySlot = new Map(
+    ratings.assignments.map((assignment) => [assignment.slotKey, assignment]),
+  );
+  const rows = FORMATION_PITCH_ROWS[ratings.formation];
   return (
-    <div className="relative min-h-[36rem] overflow-hidden rounded-[2rem] border-4 border-white/80 bg-gradient-to-b from-[#16834e] to-[#0b6b3b] p-3 shadow-card sm:p-5">
+    <div className="relative min-h-[31rem] overflow-hidden rounded-[2rem] border-4 border-white/80 bg-gradient-to-b from-[#16834e] to-[#0b6b3b] p-3 shadow-card sm:min-h-[36rem] sm:p-5">
       <div className="pointer-events-none absolute inset-3 rounded-[1.5rem] border-2 border-white/35" />
       <div className="pointer-events-none absolute inset-x-3 top-1/2 border-t-2 border-white/35" />
       <div className="pointer-events-none absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/35" />
       <div className="pointer-events-none absolute inset-x-[28%] bottom-3 h-20 border-2 border-b-0 border-white/35" />
       <div className="pointer-events-none absolute inset-x-[28%] top-3 h-20 border-2 border-t-0 border-white/35" />
-      <div className="relative grid min-h-[33rem] grid-rows-4 gap-2 py-4">
-        {rows.map((unit) => (
-          <div className="flex items-center justify-evenly gap-1" key={unit}>
-            {ratings.assignments
-              .filter((assignment) => assignment.unit === unit)
-              .map((assignment) => (
+      <div className={`relative grid min-h-[28rem] gap-1 py-3 sm:min-h-[33rem] sm:gap-2 sm:py-4 ${rows.length === 5 ? 'grid-rows-5' : 'grid-rows-4'}`}>
+        {rows.map((row) => (
+          <div className="flex items-center justify-evenly gap-1" key={row.join('-')}>
+            {row.map((slotKey) => {
+              const assignment = assignmentsBySlot.get(slotKey);
+              if (!assignment) return null;
+              const isDropTarget = dragOverSlot === assignment.slotKey && draggingPlayerId !== assignment.player.id;
+              return (
                 <button
                   aria-pressed={selectedSlot === assignment.slotKey}
-                  className="group relative z-10 flex w-16 flex-col items-center gap-1 rounded-xl px-1 py-1 focus-visible:outline-white sm:w-20"
+                  className={`group relative z-10 flex w-14 flex-col items-center gap-1 rounded-xl px-1 py-1 focus-visible:outline-white sm:w-20 ${draggingPlayerId === assignment.player.id ? 'opacity-45' : ''}`}
+                  draggable
                   key={assignment.slotKey}
-                  onClick={() => onSelectSlot(assignment.slotKey)}
+                  onClick={() => {
+                    onSelectSlot(assignment.slotKey);
+                    onInspectPlayer(assignment.player.id);
+                  }}
+                  onDragEnd={() => {
+                    onDragEnd();
+                    onDragOverSlot(null);
+                  }}
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    event.dataTransfer.dropEffect = 'move';
+                    onDragOverSlot(assignment.slotKey);
+                  }}
+                  onDragStart={(event) => {
+                    event.dataTransfer.effectAllowed = 'move';
+                    event.dataTransfer.setData(PLAYER_DRAG_TYPE, assignment.player.id);
+                    event.dataTransfer.setData('text/plain', assignment.player.id);
+                    onDragStart(assignment.player.id);
+                  }}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    const playerId = draggedPlayerId(event);
+                    if (playerId) onDropPlayer(playerId, assignment.slotKey);
+                    onDragOverSlot(null);
+                  }}
                   title={`Edit ${assignment.slotKey}: ${assignment.player.firstName} ${assignment.player.lastName}`}
                   type="button"
                 >
                   <span
-                    className={`relative grid h-11 w-11 place-items-center rounded-t-[1rem] rounded-b-lg border-2 font-display text-sm font-bold shadow-lg transition group-hover:-translate-y-1 ${selectedSlot === assignment.slotKey ? 'border-gold ring-4 ring-gold/30' : 'border-white/60'}`}
+                    className={`relative grid h-10 w-10 place-items-center rounded-t-[1rem] rounded-b-lg border-2 font-display text-sm font-bold shadow-lg transition group-hover:-translate-y-1 sm:h-11 sm:w-11 ${isDropTarget ? 'scale-110 border-gold ring-4 ring-gold/40' : selectedSlot === assignment.slotKey ? 'border-gold ring-4 ring-gold/30' : 'border-white/60'}`}
                     style={{
                       backgroundColor: profile.primaryColor,
                       color: profile.shirtTextColor,
@@ -155,7 +230,8 @@ function ManagerPitch({
                   </span>
                   <span className="text-[8px] font-black text-white/65">{assignment.slotKey}</span>
                 </button>
-              ))}
+              );
+            })}
           </div>
         ))}
       </div>
@@ -163,16 +239,18 @@ function ManagerPitch({
   );
 }
 
-function SquadChooser({
+function SquadBrowser({
   players,
   assignments,
-  selectedSlot,
-  onChoose,
+  onInspectPlayer,
+  onDragStart,
+  onDragEnd,
 }: {
   players: PublicPlayerDto[];
   assignments: Record<string, string>;
-  selectedSlot: string;
-  onChoose: (playerId: string) => void;
+  onInspectPlayer: (playerId: string) => void;
+  onDragStart: (playerId: string) => void;
+  onDragEnd: () => void;
 }) {
   const starterSlot = new Map(
     Object.entries(assignments).map(([slotKey, playerId]) => [playerId, slotKey]),
@@ -187,13 +265,21 @@ function SquadChooser({
         })
         .map((player) => {
           const slot = starterSlot.get(player.id);
-          const selected = slot === selectedSlot;
           return (
             <button
-              aria-pressed={selected}
-              className={`flex items-center gap-3 rounded-xl border p-3 text-left transition ${selected ? 'border-gold bg-amber-50 ring-2 ring-amber-100' : 'border-slate-200 bg-white hover:border-pitch-300'}`}
+              aria-label={`Open ${player.firstName} ${player.lastName}'s player card`}
+              className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left transition hover:-translate-y-0.5 hover:border-pitch-300 hover:shadow-card focus-visible:outline-pitch-600"
+              draggable
               key={player.id}
-              onClick={() => onChoose(player.id)}
+              onClick={() => onInspectPlayer(player.id)}
+              onDragEnd={onDragEnd}
+              onDragStart={(event) => {
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData(PLAYER_DRAG_TYPE, player.id);
+                event.dataTransfer.setData('text/plain', player.id);
+                onDragStart(player.id);
+              }}
+              title="Open player card. You can also drag this player to a shirt."
               type="button"
             >
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-100 font-display text-sm font-bold text-ink">
@@ -218,6 +304,127 @@ function SquadChooser({
             </button>
           );
         })}
+    </div>
+  );
+}
+
+function PlayerCard({
+  player,
+  selectedSlot,
+  selectedPosition,
+  startingSlot,
+  onBack,
+  onMoveToSelectedSlot,
+  onDragStart,
+  onDragEnd,
+}: {
+  player: PublicPlayerDto;
+  selectedSlot: string;
+  selectedPosition: Parameters<typeof getPositionPenalty>[1];
+  startingSlot: string | undefined;
+  onBack: () => void;
+  onMoveToSelectedSlot: () => void;
+  onDragStart: (playerId: string) => void;
+  onDragEnd: () => void;
+}) {
+  const positionPenalty = getPositionPenalty(player, selectedPosition);
+  const canPlaySelectedSlot = positionPenalty !== null;
+  const isSelectedStarter = startingSlot === selectedSlot;
+
+  return (
+    <div className="overflow-hidden">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-100 p-5">
+        <button
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-extrabold text-slate-600 transition hover:border-pitch-300 hover:text-pitch-800"
+          onClick={onBack}
+          type="button"
+        >
+          <span aria-hidden="true">←</span> Back to squad
+        </button>
+        <div className="flex items-center gap-2">
+          <button
+            aria-label={`Drag ${player.firstName} ${player.lastName} to a shirt on the pitch`}
+            className="hidden cursor-grab rounded-xl border border-pitch-200 bg-pitch-50 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-pitch-800 active:cursor-grabbing sm:block"
+            draggable
+            onDragEnd={onDragEnd}
+            onDragStart={(event) => {
+              event.dataTransfer.effectAllowed = 'move';
+              event.dataTransfer.setData(PLAYER_DRAG_TYPE, player.id);
+              event.dataTransfer.setData('text/plain', player.id);
+              onDragStart(player.id);
+            }}
+            type="button"
+          >
+            Drag to pitch
+          </button>
+          <span className="rounded-xl bg-pitch-100 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-pitch-800">
+            {startingSlot ?? 'Bench'}
+          </span>
+        </div>
+      </div>
+      <div className="relative bg-gradient-to-br from-slate-100 to-white px-5 pt-4">
+        <div className="absolute right-5 top-5 grid h-14 w-14 place-items-center rounded-2xl bg-pitch-950 font-display text-2xl font-bold text-white shadow-lg">
+          {player.overall}
+        </div>
+        <img
+          alt="Generic player silhouette"
+          className="mx-auto h-40 w-40 object-contain object-bottom"
+          onError={(event) => {
+            event.currentTarget.onerror = null;
+            event.currentTarget.src = '/players/default-player.png';
+          }}
+          src={player.imageUrl ?? '/players/default-player.png'}
+        />
+      </div>
+      <div className="p-5">
+        <div className="text-[10px] font-extrabold uppercase tracking-[.14em] text-pitch-700">
+          #{player.shirtNumber} · {player.primaryPosition}
+        </div>
+        <h2 className="mt-1 font-display text-2xl font-bold text-ink">
+          {player.firstName} {player.lastName}
+        </h2>
+        <div className="mt-2 flex items-center gap-2 text-xs font-semibold text-slate-500">
+          <FlagIcon code={player.nationalityCode} />
+          {player.nationalityCode.toUpperCase()}
+          {player.secondaryPositions.length > 0 && <span>· Also {player.secondaryPositions.join(' / ')}</span>}
+        </div>
+
+        <dl className="mt-5 grid grid-cols-3 gap-2">
+          {Object.entries(player.attributes).map(([key, value]) => (
+            <div className="rounded-xl bg-slate-50 px-2 py-2 text-center" key={key}>
+              <dt className="text-[8px] font-extrabold uppercase tracking-wider text-slate-400">{ATTRIBUTE_LABELS[key] ?? key}</dt>
+              <dd className="mt-1 font-display text-base font-bold text-ink">{value}</dd>
+            </div>
+          ))}
+        </dl>
+
+        {isSelectedStarter ? (
+          <button
+            className="mt-5 w-full rounded-xl border border-pitch-200 bg-pitch-50 px-4 py-3 text-sm font-extrabold text-pitch-800 transition hover:bg-pitch-100"
+            onClick={onBack}
+            type="button"
+          >
+            Choose a replacement for {selectedSlot}
+          </button>
+        ) : (
+          <>
+            <p className={`mt-5 text-xs font-semibold ${canPlaySelectedSlot ? 'text-slate-500' : 'text-rose-700'}`}>
+              {canPlaySelectedSlot
+                ? `Ready for ${selectedSlot}${positionPenalty && positionPenalty > 0 ? ` with a ${positionPenalty}-point position penalty` : ''}.`
+                : `${player.primaryPosition} cannot play ${selectedPosition}.`}
+            </p>
+            <button
+              className="mt-3 w-full rounded-xl bg-pitch-700 px-4 py-3 text-sm font-extrabold text-white shadow-glow transition hover:bg-pitch-800 disabled:cursor-not-allowed disabled:opacity-45"
+              disabled={!canPlaySelectedSlot}
+              onClick={onMoveToSelectedSlot}
+              type="button"
+            >
+              Put in {selectedSlot}
+            </button>
+          </>
+        )}
+        <p className="mt-3 text-center text-[10px] font-semibold leading-4 text-slate-400">On desktop, you can also drag this player directly onto any shirt.</p>
+      </div>
     </div>
   );
 }
@@ -269,6 +476,11 @@ function ManagerEditor({
     FORMATION_TEMPLATES[initialFormation].find(({ unit }) => unit === 'ATT')?.key
       ?? FORMATION_TEMPLATES[initialFormation][0].key,
   );
+  const [panelPlayerId, setPanelPlayerId] = useState<string | null>(null);
+  const [squadSearch, setSquadSearch] = useState('');
+  const [squadFilter, setSquadFilter] = useState<SquadFilter>('ALL');
+  const [draggingPlayerId, setDraggingPlayerId] = useState<string | null>(null);
+  const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
   const [serverSignature, setServerSignature] = useState(() =>
     lineupSignature(initialFormation, initialAssignments),
   );
@@ -305,6 +517,18 @@ function ManagerEditor({
   const selectedTemplateSlot = FORMATION_TEMPLATES[formation].find(
     ({ key }) => key === selectedSlot,
   );
+  const panelPlayer = panelPlayerId ? playersById.get(panelPlayerId) ?? null : null;
+  const panelPlayerStartingSlot = panelPlayerId
+    ? Object.entries(assignments).find(([, playerId]) => playerId === panelPlayerId)?.[0]
+    : undefined;
+  const filteredSquad = useMemo(() => {
+    const normalizedSearch = squadSearch.trim().toLowerCase();
+    return profile.squad.filter((player) => {
+      const matchesFilter = squadFilter === 'ALL' || squadGroup(player.primaryPosition) === squadFilter;
+      const name = `${player.firstName} ${player.lastName}`.toLowerCase();
+      return matchesFilter && (!normalizedSearch || name.includes(normalizedSearch) || player.primaryPosition.toLowerCase().includes(normalizedSearch));
+    });
+  }, [profile.squad, squadFilter, squadSearch]);
   const nextFixture = profile.upcomingFixtures[0];
 
   function changeFormation(nextFormation: Formation) {
@@ -316,25 +540,29 @@ function ManagerEditor({
         FORMATION_TEMPLATES[nextFormation].find(({ unit }) => unit === 'ATT')?.key
           ?? FORMATION_TEMPLATES[nextFormation][0].key,
       );
+      setPanelPlayerId(null);
       setMessage({
         tone: 'info',
-        text: `${nextFormation} loaded with the strongest compatible XI. You can make substitutions below.`,
+        text: `${nextFormation} loaded with the strongest compatible XI. Drag a player to a shirt or choose a replacement from the squad panel.`,
       });
     } catch (error) {
       setMessage({ tone: 'error', text: readableError(error) });
     }
   }
 
-  function choosePlayer(playerId: string) {
-    if (!selectedTemplateSlot) return;
+  function movePlayerToSlot(playerId: string, destinationSlot: string) {
+    const destinationTemplateSlot = FORMATION_TEMPLATES[formation].find(
+      ({ key }) => key === destinationSlot,
+    );
+    if (!destinationTemplateSlot) return;
     const player = playersById.get(playerId);
-    const currentPlayerId = assignments[selectedSlot];
+    const currentPlayerId = assignments[destinationSlot];
     const currentPlayer = currentPlayerId ? playersById.get(currentPlayerId) : undefined;
     if (!player || !currentPlayerId || !currentPlayer || playerId === currentPlayerId) return;
-    if (getPositionPenalty(player, selectedTemplateSlot.position) === null) {
+    if (getPositionPenalty(player, destinationTemplateSlot.position) === null) {
       setMessage({
         tone: 'error',
-        text: `${player.primaryPosition} ${player.lastName} cannot play ${selectedTemplateSlot.position}.`,
+        text: `${player.primaryPosition} ${player.lastName} cannot play ${destinationTemplateSlot.position}.`,
       });
       return;
     }
@@ -357,10 +585,24 @@ function ManagerEditor({
 
     setAssignments((current) => ({
       ...current,
-      [selectedSlot]: playerId,
+      [destinationSlot]: playerId,
       ...(occupiedSlotKey ? { [occupiedSlotKey]: currentPlayerId } : {}),
     }));
+    setSelectedSlot(destinationSlot);
     setMessage(null);
+  }
+
+  function choosePlayer(playerId: string) {
+    movePlayerToSlot(playerId, selectedSlot);
+  }
+
+  function inspectPlayer(playerId: string) {
+    setPanelPlayerId(playerId);
+  }
+
+  function finishDrag() {
+    setDraggingPlayerId(null);
+    setDragOverSlot(null);
   }
 
   async function saveDraft(): Promise<ManagerTeamProfile | null> {
@@ -445,7 +687,7 @@ function ManagerEditor({
             <div className="text-[10px] font-extrabold uppercase tracking-[.18em] text-white/60">Manager workspace · Private until published</div>
             <h1 className="mt-2 font-display text-3xl font-bold tracking-tight sm:text-4xl">{profile.name}</h1>
             <p className="mt-2 text-sm font-semibold text-white/65">
-              Select a shirt, then choose a player. Position penalties are reflected immediately.
+              Drag players between shirts, or open a player card to make a considered change. Position penalties update immediately.
             </p>
           </div>
           <div className="rounded-2xl border border-white/15 bg-black/20 px-5 py-4 text-right backdrop-blur">
@@ -480,28 +722,98 @@ function ManagerEditor({
         </div>
       </section>
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(21rem,.75fr)]">
+      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(21rem,.85fr)] xl:grid-cols-[minmax(0,1.25fr)_minmax(23rem,.75fr)]">
         <div>
           {ratings ? (
-            <ManagerPitch onSelectSlot={setSelectedSlot} profile={profile} ratings={ratings} selectedSlot={selectedSlot} />
+            <ManagerPitch
+              draggingPlayerId={draggingPlayerId}
+              dragOverSlot={dragOverSlot}
+              onDragEnd={finishDrag}
+              onDragOverSlot={setDragOverSlot}
+              onDragStart={setDraggingPlayerId}
+              onDropPlayer={(playerId, slotKey) => {
+                movePlayerToSlot(playerId, slotKey);
+                finishDrag();
+              }}
+              onInspectPlayer={inspectPlayer}
+              onSelectSlot={setSelectedSlot}
+              profile={profile}
+              ratings={ratings}
+              selectedSlot={selectedSlot}
+            />
           ) : (
             <EmptyState detail="Choose a valid player for all eleven positions." icon="shirt" title="Incomplete XI" />
           )}
         </div>
-        <aside className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-card">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-[.15em] text-pitch-700">Selected position</p>
-              <h2 className="mt-1 font-display text-2xl font-bold text-ink">{selectedSlot}</h2>
-              <p className="mt-1 text-xs text-slate-500">Choose any compatible squad member below.</p>
+        <aside className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-card lg:sticky lg:top-28 lg:self-start">
+          {panelPlayer ? (
+            <PlayerCard
+              onBack={() => setPanelPlayerId(null)}
+              onDragEnd={finishDrag}
+              onDragStart={setDraggingPlayerId}
+              onMoveToSelectedSlot={() => choosePlayer(panelPlayer.id)}
+              player={panelPlayer}
+              selectedPosition={selectedTemplateSlot?.position ?? panelPlayer.primaryPosition}
+              selectedSlot={selectedSlot}
+              startingSlot={panelPlayerStartingSlot}
+            />
+          ) : (
+            <div className="p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-extrabold uppercase tracking-[.15em] text-pitch-700">Squad board</p>
+                  <h2 className="mt-1 font-display text-2xl font-bold text-ink">Replace {selectedSlot}</h2>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">Drag a player onto a shirt, or open their card to use the touch-friendly replacement control.</p>
+                </div>
+                {selectedTemplateSlot && (
+                  <span className="rounded-xl bg-pitch-100 px-3 py-2 text-xs font-black text-pitch-800">{selectedTemplateSlot.position}</span>
+                )}
+              </div>
+
+              <label className="mt-5 block">
+                <span className="sr-only">Search squad</span>
+                <input
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-ink outline-none transition placeholder:text-slate-400 focus:border-pitch-500 focus:bg-white focus:ring-4 focus:ring-pitch-100"
+                  onChange={(event) => setSquadSearch(event.target.value)}
+                  placeholder="Search players or position"
+                  type="search"
+                  value={squadSearch}
+                />
+              </label>
+              <div aria-label="Filter squad by role" className="mt-3 flex flex-wrap gap-1.5" role="group">
+                {SQUAD_FILTERS.map((filter) => (
+                  <button
+                    aria-pressed={squadFilter === filter}
+                    className={`rounded-lg px-2.5 py-1.5 text-[10px] font-extrabold transition ${squadFilter === filter ? 'bg-pitch-700 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-pitch-50 hover:text-pitch-800'}`}
+                    key={filter}
+                    onClick={() => setSquadFilter(filter)}
+                    type="button"
+                  >
+                    {filter === 'ALL' ? 'All' : filter}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{filteredSquad.length} players</span>
+                <span className="text-[10px] font-semibold text-slate-400">Drop zone: any shirt</span>
+              </div>
+              <div className="mt-3 max-h-[29rem] overflow-y-auto pr-1 lg:max-h-[31rem]">
+                {filteredSquad.length > 0 ? (
+                  <SquadBrowser
+                    assignments={assignments}
+                    onDragEnd={finishDrag}
+                    onDragStart={setDraggingPlayerId}
+                    onInspectPlayer={inspectPlayer}
+                    players={filteredSquad}
+                  />
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-xs font-semibold text-slate-500">
+                    No players match those filters.
+                  </div>
+                )}
+              </div>
             </div>
-            {selectedTemplateSlot && (
-              <span className="rounded-xl bg-pitch-100 px-3 py-2 text-xs font-black text-pitch-800">{selectedTemplateSlot.position}</span>
-            )}
-          </div>
-          <div className="mt-5 max-h-[31rem] overflow-y-auto pr-1">
-            <SquadChooser assignments={assignments} onChoose={choosePlayer} players={profile.squad} selectedSlot={selectedSlot} />
-          </div>
+          )}
         </aside>
       </div>
 
