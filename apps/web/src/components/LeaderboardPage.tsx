@@ -1,6 +1,7 @@
 import { formatCoins } from '../lib/format';
 import type { BettingLeaderboardEntry, User } from '../types';
 import { EmptyState, Icon, TeamCrest } from './ui';
+import { Link } from 'react-router';
 
 function signedCoins(value: number): string {
   if (value > 0) return `+${formatCoins(value)}`;
@@ -21,7 +22,9 @@ function ManagerIdentity({ entry, compact = false }: { entry: BettingLeaderboard
   return (
     <div className="flex min-w-0 items-center gap-3">
       {entry.team ? (
-        <TeamCrest size="sm" team={entry.team} />
+        <Link aria-label={`Open ${entry.team.name} club profile`} className="rounded-xl" to={`/teams/${encodeURIComponent(entry.team.id)}`}>
+          <TeamCrest size="sm" team={entry.team} />
+        </Link>
       ) : (
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-slate-200 bg-slate-50 text-slate-400">
           <Icon className="h-4 w-4" name="ranking" />
@@ -38,7 +41,9 @@ function ManagerIdentity({ entry, compact = false }: { entry: BettingLeaderboard
         </span>
         {!compact && (
           <span className="mt-0.5 block truncate text-[10px] font-semibold text-slate-400">
-            {entry.team?.name ?? 'Independent manager'}
+            {entry.team ? (
+              <Link className="underline-offset-2 hover:text-pitch-700 hover:underline" to={`/teams/${encodeURIComponent(entry.team.id)}`}>{entry.team.name}</Link>
+            ) : 'Independent manager'}
             {entry.pendingBets > 0 ? ` · ${entry.pendingBets} pending` : ''}
           </span>
         )}

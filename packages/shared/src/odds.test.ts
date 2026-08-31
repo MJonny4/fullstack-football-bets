@@ -35,4 +35,11 @@ describe("probability and odds model", () => {
       expect(sum).toBeCloseTo(1, 8);
     }
   });
+
+  it("preserves precise decimal lineup-strength changes", () => {
+    const before = getMarketProbabilities(72.25, 72.25).MATCH_RESULT.HOME;
+    const after = getMarketProbabilities(72.35, 72.25).MATCH_RESULT.HOME;
+
+    expect(after).toBeGreaterThan(before);
+  });
 });

@@ -1,9 +1,10 @@
 import type {
+  BetStatus,
   BettingLeaderboardEntryDto,
   PublicManagerTeamDto,
 } from "@fb/shared";
 
-export type LeaderboardBetStatus = "PENDING" | "WON" | "LOST";
+export type LeaderboardBetStatus = BetStatus;
 
 export type LeaderboardTeam = PublicManagerTeamDto;
 
@@ -42,7 +43,7 @@ function roundToOneDecimal(value: number): number {
  * Produces a presentable public alias without ever returning the email domain.
  * Plus-address tags and punctuation are intentionally discarded.
  */
-function displayNameBase(email: string): string {
+export function managerAliasBase(email: string): string {
   const at = email.indexOf("@");
   const localPart = (at >= 0 ? email.slice(0, at) : email).split("+", 1)[0] ?? "";
   const words = localPart.normalize("NFKC").match(/[\p{L}\p{N}]+/gu) ?? [];
@@ -67,7 +68,7 @@ function publicDisplayNames(users: readonly LeaderboardUserSource[]): Map<string
     .map((user) => ({
       id: user.id,
       createdAt: user.createdAt,
-      base: displayNameBase(user.email),
+      base: managerAliasBase(user.email),
     }))
     .sort(
       (left, right) =>
@@ -132,6 +133,7 @@ export function buildBettingLeaderboard(
   >();
 
   for (const aggregate of aggregates) {
+    if (aggregate.status === "CANCELLED") continue;
     const stats = aggregatesByUser.get(aggregate.userId) ?? {
       wins: 0,
       losses: 0,

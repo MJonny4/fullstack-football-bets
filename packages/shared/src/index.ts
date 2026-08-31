@@ -4,3 +4,6 @@ export * from "./probability.js";
 export * from "./odds.js";
 export * from "./grading.js";
 export * from "./standings.js";
+export * from "./players.js";
+export * from "./formations.js";
+export * from "./squad-generator.js";

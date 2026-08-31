@@ -1,9 +1,12 @@
-import { Controller, Get } from "@nestjs/common";
+import { Controller, Get, Inject } from "@nestjs/common";
 import { LeaderboardService } from "./leaderboard.service.js";
 
 @Controller("leaderboard")
 export class LeaderboardController {
-  constructor(private readonly leaderboard: LeaderboardService) {}
+  constructor(
+    @Inject(LeaderboardService)
+    private readonly leaderboard: LeaderboardService,
+  ) {}
 
   @Get()
   list() {

@@ -1,9 +1,9 @@
-import { Controller, Post } from "@nestjs/common";
+import { Controller, Inject, Post } from "@nestjs/common";
 import { DevService } from "./dev.service.js";
 
 @Controller("dev")
 export class DevController {
-  constructor(private readonly dev: DevService) {}
+  constructor(@Inject(DevService) private readonly dev: DevService) {}
 
   @Post("open-round")
   openRound() {

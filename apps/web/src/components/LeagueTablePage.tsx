@@ -1,5 +1,6 @@
 import type { LeagueStandings, User } from '../types';
-import { EmptyState, TeamCrest } from './ui';
+import { EmptyState } from './ui';
+import { TeamLink } from './TeamLink';
 
 type Standing = LeagueStandings['entries'][number];
 type FormResult = Standing['form'][number];
@@ -163,9 +164,8 @@ export function LeagueTablePage({ standings, user }: { standings: LeagueStanding
                   </td>
                   <th className="px-3 py-3 text-left" scope="row">
                     <div className="flex items-center gap-3">
-                      <span aria-hidden="true"><TeamCrest size="sm" team={entry.team} /></span>
+                      <TeamLink compact team={entry.team} />
                       <span className="min-w-0">
-                        <span className="block truncate text-sm font-extrabold text-ink">{entry.team.name}</span>
                         {mine && <span className="mt-0.5 block text-[9px] font-extrabold uppercase tracking-wider text-pitch-700">Your club</span>}
                       </span>
                     </div>
@@ -199,10 +199,9 @@ export function LeagueTablePage({ standings, user }: { standings: LeagueStanding
                   <span className={`grid h-8 min-w-8 place-items-center rounded-lg px-1.5 font-display text-xs font-bold ${positionBadgeStyle(entry.position, totalTeams)}`}>
                     <span className="sr-only">Position </span>{entry.position}
                   </span>
-                  <span aria-hidden="true"><TeamCrest size="sm" team={entry.team} /></span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="truncate text-sm font-extrabold text-ink">{entry.team.name}</span>
+                      <TeamLink compact team={entry.team} />
                       {mine && <span className="shrink-0 rounded-full bg-pitch-200 px-2 py-0.5 text-[8px] font-extrabold uppercase tracking-wider text-pitch-900">Your club</span>}
                     </div>
                     <div className="mt-1 text-[10px] font-semibold text-slate-400">Played {entry.played} · {entry.wins}-{entry.draws}-{entry.losses}</div>
