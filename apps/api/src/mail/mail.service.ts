@@ -21,7 +21,7 @@ export class MailService {
 
   constructor() {
     const user = process.env.SMTP_USER?.trim() || process.env.EMAIL_NAME?.trim();
-    const pass = process.env.SMTP_PASS?.trim() || process.env.EMAIL_PASSWORD?.trim();
+    const pass = process.env.SMTP_PASS?.trim() || process.env.EMAIL_PASSWORD?.replace(/\s+/g, "");
     const host = process.env.SMTP_HOST?.trim() || (user && pass ? "smtp.gmail.com" : undefined);
     this.from = process.env.SMTP_FROM?.trim() || user || null;
 
