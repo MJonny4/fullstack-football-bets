@@ -161,6 +161,13 @@ export class AuthService {
       include: { user: true },
     });
     if (
+      token?.purpose === AccountTokenPurpose.EMAIL_VERIFICATION &&
+      token.user.emailVerifiedAt &&
+      !token.user.deactivatedAt
+    ) {
+      return { verified: true };
+    }
+    if (
       !token ||
       token.purpose !== AccountTokenPurpose.EMAIL_VERIFICATION ||
       token.consumedAt ||

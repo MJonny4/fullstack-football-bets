@@ -8,6 +8,7 @@ import {
   Res,
   UseGuards,
 } from "@nestjs/common";
+import { Throttle } from "@nestjs/throttler";
 import type { Response } from "express";
 import { CurrentUser, type AuthenticatedUser } from "../common/current-user.decorator.js";
 import { SessionAuthGuard } from "../common/session-auth.guard.js";
@@ -26,6 +27,7 @@ export class AuthController {
   constructor(@Inject(AuthService) private readonly auth: AuthService) {}
 
   @Post("signup")
+  @Throttle({ default: { limit: process.env.NODE_ENV === "test" ? 10_000 : 8, ttl: 15 * 60_000 } })
   async signup(
     @Body() credentials: SignupDto,
     @Res({ passthrough: true }) response: Response,
@@ -34,6 +36,7 @@ export class AuthController {
   }
 
   @Post("login")
+  @Throttle({ default: { limit: process.env.NODE_ENV === "test" ? 10_000 : 12, ttl: 60_000 } })
   @HttpCode(HttpStatus.OK)
   async login(
     @Body() credentials: CredentialsDto,
@@ -54,6 +57,7 @@ export class AuthController {
   }
 
   @Post("forgot-password")
+  @Throttle({ default: { limit: process.env.NODE_ENV === "test" ? 10_000 : 3, ttl: 15 * 60_000 } })
   @HttpCode(HttpStatus.ACCEPTED)
   async forgotPassword(@Body() input: ForgotPasswordDto) {
     await this.auth.requestPasswordReset(input);
@@ -61,6 +65,7 @@ export class AuthController {
   }
 
   @Post("reset-password")
+  @Throttle({ default: { limit: process.env.NODE_ENV === "test" ? 10_000 : 6, ttl: 15 * 60_000 } })
   @HttpCode(HttpStatus.OK)
   async resetPassword(
     @Body() input: ResetPasswordDto,
@@ -70,12 +75,14 @@ export class AuthController {
   }
 
   @Post("verify-email")
+  @Throttle({ default: { limit: process.env.NODE_ENV === "test" ? 10_000 : 10, ttl: 15 * 60_000 } })
   @HttpCode(HttpStatus.OK)
   verifyEmail(@Body() input: TokenDto) {
     return this.auth.verifyEmail(input);
   }
 
   @Post("resend-verification")
+  @Throttle({ default: { limit: process.env.NODE_ENV === "test" ? 10_000 : 3, ttl: 60 * 60_000 } })
   @UseGuards(SessionAuthGuard)
   @HttpCode(HttpStatus.ACCEPTED)
   async resendVerification(@CurrentUser() user: AuthenticatedUser) {

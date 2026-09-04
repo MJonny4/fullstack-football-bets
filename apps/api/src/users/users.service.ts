@@ -104,7 +104,7 @@ export class UsersService {
       }
       throw error;
     }
-    await this.liveUpdates.broadcast();
+    await this.broadcastProfileChange(userId);
     return this.me(userId);
   }
 
@@ -132,7 +132,7 @@ export class UsersService {
         avatarUpdatedAt: new Date(),
       },
     });
-    await this.liveUpdates.broadcast();
+    await this.broadcastProfileChange(userId);
     return this.me(userId);
   }
 
@@ -145,7 +145,7 @@ export class UsersService {
         avatarUpdatedAt: null,
       },
     });
-    await this.liveUpdates.broadcast();
+    await this.broadcastProfileChange(userId);
     return this.me(userId);
   }
 
@@ -178,7 +178,10 @@ export class UsersService {
   }
 
   async deactivate(userId: string, input: DeactivateAccountDto): Promise<void> {
-    const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    const user = await prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      include: { dtAssignment: { select: { teamId: true } } },
+    });
     if (!(await compare(input.password, user.passwordHash))) {
       throw new UnauthorizedException("Your password is incorrect");
     }
@@ -197,5 +200,17 @@ export class UsersService {
       }),
     ]);
     await this.liveUpdates.broadcast();
+    if (user.dtAssignment) {
+      this.liveUpdates.emitTeamUpdate({ teamId: user.dtAssignment.teamId });
+    }
+  }
+
+  private async broadcastProfileChange(userId: string): Promise<void> {
+    const assignment = await prisma.dTAssignment.findUnique({
+      where: { userId },
+      select: { teamId: true },
+    });
+    await this.liveUpdates.broadcast();
+    if (assignment) this.liveUpdates.emitTeamUpdate({ teamId: assignment.teamId });
   }
 }

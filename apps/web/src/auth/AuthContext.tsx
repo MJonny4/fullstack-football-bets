@@ -79,7 +79,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           username: profile?.username ?? '',
           displayName: profile?.displayName ?? '',
         });
-    setUser(response.user);
+    try {
+      setUser(await api.me());
+    } catch {
+      setUser(response.user);
+    }
   }, []);
 
   const replaceUser = useCallback((nextUser: User) => setUser(nextUser), []);

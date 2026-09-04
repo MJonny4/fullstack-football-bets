@@ -73,14 +73,18 @@ export function Brand({ light = false }: { light?: boolean }) {
   );
 }
 
-export function CoinBalance({ value, compact = false }: { value: Numeric; compact?: boolean }) {
+export function CoinBalance({ value, compact = false, inverted = false }: { value: Numeric; compact?: boolean; inverted?: boolean }) {
   return (
-    <div className={`inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 font-bold text-ink ${compact ? 'px-3 py-1.5 text-sm' : 'px-4 py-2'}`}>
+    <div className={`inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 font-bold ${inverted ? 'text-white' : 'text-ink'} ${compact ? 'px-3 py-1.5 text-sm' : 'px-4 py-2'}`}>
       <span className="grid h-6 w-6 place-items-center rounded-full bg-gold text-amber-950">
         <Icon name="coins" className="h-3.5 w-3.5" />
       </span>
       <span>{formatCoins(value)}</span>
-      {!compact && <span className="text-xs font-semibold uppercase tracking-wider text-ink/50">coins</span>}
+      {!compact && (
+        <span className={`text-xs font-semibold uppercase tracking-wider ${inverted ? 'text-white' : 'text-ink/50'}`}>
+          coins
+        </span>
+      )}
     </div>
   );
 }

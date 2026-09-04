@@ -1051,14 +1051,19 @@ describe("Slice 1 HTTP lifecycle", () => {
       })
       .expect(201);
     const token = signup.body.accessToken as string;
-    expect(signup.headers["set-cookie"]?.[0]).toContain("HttpOnly");
-    expect(signup.headers["set-cookie"]?.[0]).toContain("SameSite=Lax");
+    const sessionCookie = signup.headers["set-cookie"]?.[0];
+    expect(sessionCookie).toContain("HttpOnly");
+    expect(sessionCookie).toContain("SameSite=Lax");
     expect(signup.body.user).toMatchObject({
       username: "touchline_manager",
       displayName: "Touchline Manager",
       avatarUrl: null,
       emailVerified: false,
     });
+    await request(http)
+      .get("/api/users/me")
+      .set("Cookie", sessionCookie as string)
+      .expect(200);
 
     const secondLogin = await request(http)
       .post("/api/auth/login")

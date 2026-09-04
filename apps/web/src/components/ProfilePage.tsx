@@ -172,8 +172,8 @@ export function ProfilePage({
             <p className="mt-1 text-sm font-bold text-pitch-200/70">@{user.username}</p>
             <p className="mt-3 text-xs font-semibold text-white/45">Member since {formatDate(user.createdAt)}</p>
           </div>
-          <div className="self-start sm:self-center [&>div]:border-gold/30 [&>div]:bg-gold/10 [&>div]:text-white">
-            <CoinBalance value={user.coinBalance} />
+          <div className="self-start sm:self-center [&>div]:border-gold/30 [&>div]:bg-gold/10">
+            <CoinBalance inverted value={user.coinBalance} />
           </div>
         </div>
       </div>

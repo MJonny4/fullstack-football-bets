@@ -48,7 +48,7 @@ The only host dependency is Docker with Compose:
 
 ```bash
 cp .env.example .env
-docker compose -f infra/docker-compose.yml up --build -d --wait
+docker compose --env-file .env -f infra/docker-compose.yml up --build -d --wait
 ```
 
 Open <http://localhost:8080>. The stack starts PostgreSQL, Redis, an idempotent

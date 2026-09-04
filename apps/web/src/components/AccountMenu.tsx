@@ -7,6 +7,8 @@ import { UserAvatar } from './UserAvatar';
 export function AccountMenu({ user, onLogout }: { user: User; onLogout: () => Promise<void> }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -19,11 +21,15 @@ export function AccountMenu({ user, onLogout }: { user: User; onLogout: () => Pr
 
   useEffect(() => {
     if (!open) return;
+    menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
     function closeOnPointer(event: MouseEvent) {
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
     }
     function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape') setOpen(false);
+      if (event.key === 'Escape') {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
     }
     document.addEventListener('mousedown', closeOnPointer);
     document.addEventListener('keydown', closeOnEscape);
@@ -33,6 +39,22 @@ export function AccountMenu({ user, onLogout }: { user: User; onLogout: () => Pr
     };
   }, [open]);
 
+  function moveFocus(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+    const items = [...(menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])];
+    if (!items.length) return;
+    event.preventDefault();
+    const current = items.indexOf(document.activeElement as HTMLElement);
+    const next = event.key === 'Home'
+      ? 0
+      : event.key === 'End'
+        ? items.length - 1
+        : event.key === 'ArrowDown'
+          ? (current + 1) % items.length
+          : (current - 1 + items.length) % items.length;
+    items[next]?.focus();
+  }
+
   return (
     <div className="relative" ref={rootRef}>
       <button
@@ -41,6 +63,7 @@ export function AccountMenu({ user, onLogout }: { user: User; onLogout: () => Pr
         aria-label="Open account menu"
         className="flex items-center gap-1.5 rounded-2xl border border-white/15 bg-white/10 p-1 text-pitch-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_5px_12px_-7px_rgba(0,0,0,0.9)] transition hover:border-white/25 hover:bg-white/15 focus-visible:outline-white"
         onClick={() => setOpen((current) => !current)}
+        ref={triggerRef}
         type="button"
       >
         <UserAvatar size="sm" user={user} />
@@ -50,6 +73,8 @@ export function AccountMenu({ user, onLogout }: { user: User; onLogout: () => Pr
       {open && (
         <div
           className="absolute right-0 top-[calc(100%+0.75rem)] z-50 w-[min(20rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 text-ink shadow-[0_24px_70px_-24px_rgba(4,43,31,0.65)]"
+          onKeyDown={moveFocus}
+          ref={menuRef}
           role="menu"
         >
           <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-3">
@@ -64,12 +89,6 @@ export function AccountMenu({ user, onLogout }: { user: User; onLogout: () => Pr
               <Icon className="h-4 w-4" name="user" />
               Profile & account
             </Link>
-            {user.dtAssignment?.team && (
-              <Link className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold hover:bg-pitch-50 hover:text-pitch-800" role="menuitem" to="/my-team">
-                <Icon className="h-4 w-4" name="shirt" />
-                Manage {user.dtAssignment.team.name}
-              </Link>
-            )}
           </div>
           <div className="my-2 h-px bg-slate-100" />
           <button
