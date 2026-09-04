@@ -585,7 +585,11 @@ export function TeamProfilePage() {
             <p className="mt-2 text-sm font-semibold text-white/65">{profile.city} · {profile.stadiumName}</p>
             <div className="mt-4 flex flex-wrap gap-2 text-[10px] font-extrabold uppercase tracking-wider">
               <span className="rounded-full bg-white/15 px-3 py-1.5">{profile.standing ? `#${profile.standing.position} in league` : 'League position pending'}</span>
-              <span className="rounded-full bg-white/15 px-3 py-1.5">{profile.manager ? `DT ${profile.manager.displayName}` : 'Unclaimed club'}</span>
+              {profile.manager ? (
+                <Link className="rounded-full bg-white/15 px-3 py-1.5 underline-offset-2 hover:bg-white/25 hover:underline" to={`/managers/${encodeURIComponent(profile.manager.username)}`}>DT {profile.manager.displayName}</Link>
+              ) : (
+                <span className="rounded-full bg-white/15 px-3 py-1.5">Unclaimed club</span>
+              )}
               {profile.officialLineup && <span className="rounded-full bg-white/15 px-3 py-1.5">{profile.officialLineup.formation}</span>}
             </div>
           </div>

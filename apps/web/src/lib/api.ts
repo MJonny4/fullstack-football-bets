@@ -3,20 +3,20 @@ import type {
   Bet,
   BettingLeaderboardEntry,
   LeagueStandings,
+  LedgerEntry,
   LineupDraftInput,
   LineupInput,
   ManagerTeamProfile,
   PlaceBetInput,
   PlaceBetResponse,
   PublishLineupResult,
+  PublicManagerProfile,
   Round,
   Team,
   TeamMatchHistoryPage,
   TeamProfile,
   User,
 } from '../types';
-
-const TOKEN_KEY = 'football-bets.access-token';
 
 export class ApiError extends Error {
   readonly status: number;
@@ -28,18 +28,6 @@ export class ApiError extends Error {
     this.status = status;
     this.details = details;
   }
-}
-
-export function getAccessToken(): string | null {
-  return window.localStorage.getItem(TOKEN_KEY);
-}
-
-export function setAccessToken(token: string): void {
-  window.localStorage.setItem(TOKEN_KEY, token);
-}
-
-export function clearAccessToken(): void {
-  window.localStorage.removeItem(TOKEN_KEY);
 }
 
 function errorMessage(payload: unknown, fallback: string): string {
@@ -56,14 +44,14 @@ function errorMessage(payload: unknown, fallback: string): string {
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
-  const token = getAccessToken();
 
-  if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
-  if (token) headers.set('Authorization', `Bearer ${token}`);
+  if (init.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
 
   let response: Response;
   try {
-    response = await fetch(path, { ...init, headers });
+    response = await fetch(path, { ...init, headers, credentials: 'include' });
   } catch {
     throw new ApiError('The server could not be reached. Check your connection and try again.', 0);
   }
@@ -83,10 +71,10 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
-  signup(email: string, password: string) {
+  signup(input: { email: string; password: string; username: string; displayName: string }) {
     return request<AuthResponse>('/api/auth/signup', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify(input),
     });
   },
 
@@ -97,8 +85,76 @@ export const api = {
     });
   },
 
+  logout() {
+    return request<void>('/api/auth/logout', { method: 'POST' });
+  },
+
+  forgotPassword(email: string) {
+    return request<{ accepted: true }>('/api/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  resetPassword(token: string, password: string) {
+    return request<AuthResponse>('/api/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
+    });
+  },
+
+  verifyEmail(token: string) {
+    return request<{ verified: true }>('/api/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  },
+
+  resendVerification() {
+    return request<{ accepted: true }>('/api/auth/resend-verification', { method: 'POST' });
+  },
+
   me() {
     return request<User>('/api/users/me');
+  },
+
+  updateProfile(input: { username: string; displayName: string }) {
+    return request<User>('/api/users/me/profile', {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    });
+  },
+
+  updateAvatar(file: File) {
+    const body = new FormData();
+    body.append('avatar', file);
+    return request<User>('/api/users/me/avatar', { method: 'POST', body });
+  },
+
+  removeAvatar() {
+    return request<User>('/api/users/me/avatar', { method: 'DELETE' });
+  },
+
+  changePassword(input: { currentPassword: string; newPassword: string }) {
+    return request<{ changed: true }>('/api/users/me/password', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
+  deactivateAccount(password: string) {
+    return request<void>('/api/users/me/deactivate', {
+      method: 'POST',
+      body: JSON.stringify({ password }),
+    });
+  },
+
+  ledger() {
+    return request<LedgerEntry[]>('/api/users/me/ledger');
+  },
+
+  managerProfile(username: string) {
+    return request<PublicManagerProfile>(`/api/users/${encodeURIComponent(username)}`);
   },
 
   async currentRound() {

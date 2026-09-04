@@ -48,15 +48,16 @@ The only host dependency is Docker with Compose:
 
 ```bash
 cp .env.example .env
-docker compose -f infra/docker-compose.yml up --build -d --wait
+docker compose --env-file .env -f infra/docker-compose.yml up --build -d --wait
 ```
 
 Open <http://localhost:8080>. The stack starts PostgreSQL, Redis, an idempotent
 database migration/seed job, the API, the lifecycle worker, and nginx serving the
 web app and proxying `/api` and `/socket.io`.
 
-The Compose defaults are suitable only for a local demo. Change `JWT_SECRET` and
-database credentials, and set `DEV_TOOLS=false`, before exposing the application.
+The Compose defaults are suitable only for a local demo. Change the database
+credentials, set `DEV_TOOLS=false`, use HTTPS with `COOKIE_SECURE=true`, and
+configure email delivery before exposing the application.
 
 To stop the services without deleting their data:
 
@@ -141,7 +142,8 @@ performance ranking, and the seeded statistical result-engine sanity check.
 ## Environment
 
 See [.env.example](.env.example). Important settings are `DATABASE_URL`,
-`TEST_DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, `DEV_TOOLS`, `APP_TZ`,
+`TEST_DATABASE_URL`, `REDIS_URL`, `DEV_TOOLS`, `APP_TZ`, `APP_PUBLIC_URL`,
+`COOKIE_SECURE`, `SESSION_TTL_DAYS`, `EMAIL_NAME`, `EMAIL_PASSWORD`,
 `TOPUP_AMOUNT`, `INITIAL_COIN_BALANCE`, `CORS_ORIGIN`, and `PORT`.
 
 ## Deliberate implementation choices

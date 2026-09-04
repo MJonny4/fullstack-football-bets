@@ -11,10 +11,14 @@ import {
 } from "@fb/shared";
 import { lockDueMatchLineups, prisma, resolveAndSettleMatch } from "@fb/core";
 import request from "supertest";
+import sharp from "sharp";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { AppModule } from "../src/app.module.js";
 import { configureApp } from "../src/configure-app.js";
 import { RESULT_ENGINE } from "../src/dev/result-engine.provider.js";
+import { MailService } from "../src/mail/mail.service.js";
+
+const sentMail: Array<{ to: string; subject: string; text: string; html: string }> = [];
 
 class HomeWinEngine implements ResultEngine {
   async resolve(_match: MatchContext) {
@@ -117,12 +121,20 @@ describe("Slice 1 HTTP lifecycle", () => {
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(RESULT_ENGINE)
       .useValue(new HomeWinEngine())
+      .overrideProvider(MailService)
+      .useValue({
+        send: async (message: { to: string; subject: string; text: string; html: string }) => {
+          sentMail.push(message);
+          return true;
+        },
+      })
       .compile();
     app = configureApp(module.createNestApplication());
     await app.init();
   });
 
   beforeEach(async () => {
+    sentMail.length = 0;
     await prisma.$transaction([
       prisma.ledgerEntry.deleteMany(),
       prisma.bet.deleteMany(),
@@ -1024,5 +1036,182 @@ describe("Slice 1 HTTP lifecycle", () => {
       .get("/api/teams/not-a-real-team/history")
       .set("Authorization", `Bearer ${token}`)
       .expect(404);
+  });
+
+  it("manages private identity, public profiles, avatars, sessions, and safe deactivation", async () => {
+    const http = app.getHttpServer();
+    const password = "correct-horse-battery-staple";
+    const signup = await request(http)
+      .post("/api/auth/signup")
+      .send({
+        email: "profile@example.com",
+        username: "touchline_manager",
+        displayName: "Touchline Manager",
+        password,
+      })
+      .expect(201);
+    const token = signup.body.accessToken as string;
+    const sessionCookie = signup.headers["set-cookie"]?.[0];
+    expect(sessionCookie).toContain("HttpOnly");
+    expect(sessionCookie).toContain("SameSite=Lax");
+    expect(signup.body.user).toMatchObject({
+      username: "touchline_manager",
+      displayName: "Touchline Manager",
+      avatarUrl: null,
+      emailVerified: false,
+    });
+    await request(http)
+      .get("/api/users/me")
+      .set("Cookie", sessionCookie as string)
+      .expect(200);
+
+    const secondLogin = await request(http)
+      .post("/api/auth/login")
+      .send({ email: "profile@example.com", password })
+      .expect(200);
+    const secondToken = secondLogin.body.accessToken as string;
+
+    const updated = await request(http)
+      .patch("/api/users/me/profile")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ username: "touchline_pro", displayName: "Touchline Pro" })
+      .expect(200);
+    expect(updated.body).toMatchObject({
+      username: "touchline_pro",
+      displayName: "Touchline Pro",
+    });
+
+    const publicProfile = await request(http)
+      .get("/api/users/touchline_pro")
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+    expect(publicProfile.body).toEqual({
+      username: "touchline_pro",
+      displayName: "Touchline Pro",
+      avatarUrl: null,
+      team: null,
+    });
+    expect(JSON.stringify(publicProfile.body)).not.toContain("profile@example.com");
+
+    const image = await sharp({
+      create: {
+        width: 16,
+        height: 16,
+        channels: 4,
+        background: { r: 14, g: 147, b: 97, alpha: 1 },
+      },
+    }).png().toBuffer();
+    const withAvatar = await request(http)
+      .post("/api/users/me/avatar")
+      .set("Authorization", `Bearer ${token}`)
+      .attach("avatar", image, { filename: "avatar.png", contentType: "image/png" })
+      .expect(201);
+    expect(withAvatar.body.avatarUrl).toMatch(/^\/api\/users\/touchline_pro\/avatar\?v=\d+$/);
+    await request(http)
+      .get(withAvatar.body.avatarUrl)
+      .set("Authorization", `Bearer ${token}`)
+      .expect("Content-Type", /image\/webp/)
+      .expect(200);
+
+    await request(http)
+      .post("/api/users/me/password")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ currentPassword: password, newPassword: "new-correct-horse-password" })
+      .expect(200, { changed: true });
+    await request(http)
+      .get("/api/users/me")
+      .set("Authorization", `Bearer ${secondToken}`)
+      .expect(401);
+
+    const teams = await request(http)
+      .get("/api/teams")
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+    await request(http)
+      .post(`/api/teams/${teams.body[0].id}/claim`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(201);
+
+    const beforeDeactivation = await prisma.user.findUniqueOrThrow({
+      where: { email: "profile@example.com" },
+      include: { ledgerEntries: true, dtAssignment: true },
+    });
+    expect(beforeDeactivation.ledgerEntries).toHaveLength(1);
+    expect(beforeDeactivation.dtAssignment).not.toBeNull();
+
+    await request(http)
+      .post("/api/users/me/deactivate")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ password: "new-correct-horse-password" })
+      .expect(204);
+
+    const afterDeactivation = await prisma.user.findUniqueOrThrow({
+      where: { email: "profile@example.com" },
+      include: { ledgerEntries: true, dtAssignment: true },
+    });
+    expect(afterDeactivation.deactivatedAt).toBeInstanceOf(Date);
+    expect(afterDeactivation.ledgerEntries).toHaveLength(1);
+    expect(afterDeactivation.dtAssignment).toBeNull();
+    await request(http)
+      .get("/api/users/touchline_pro")
+      .set("Authorization", `Bearer ${token}`)
+      .expect(401);
+    await request(http)
+      .post("/api/auth/login")
+      .send({ email: "profile@example.com", password: "new-correct-horse-password" })
+      .expect(401);
+  });
+
+  it("verifies email and resets a password through expiring one-use links", async () => {
+    const http = app.getHttpServer();
+    const signup = await request(http)
+      .post("/api/auth/signup")
+      .send({
+        email: "mail-flow@example.com",
+        username: "mail_flow",
+        displayName: "Mail Flow",
+        password: "initial-secure-password",
+      })
+      .expect(201);
+    const originalToken = signup.body.accessToken as string;
+    const verificationLink = sentMail.find((mail) => mail.subject.includes("Verify"))?.text.match(/https?:\/\/\S+/)?.[0];
+    expect(verificationLink).toEqual(expect.any(String));
+    const verificationToken = new URL(verificationLink as string).searchParams.get("token");
+
+    await request(http)
+      .post("/api/auth/verify-email")
+      .send({ token: verificationToken })
+      .expect(200, { verified: true });
+    const verifiedUser = await request(http)
+      .get("/api/users/me")
+      .set("Authorization", `Bearer ${originalToken}`)
+      .expect(200);
+    expect(verifiedUser.body.emailVerified).toBe(true);
+
+    await request(http)
+      .post("/api/auth/forgot-password")
+      .send({ email: "mail-flow@example.com" })
+      .expect(202, { accepted: true });
+    const resetLink = sentMail.find((mail) => mail.subject.includes("Reset"))?.text.match(/https?:\/\/\S+/)?.[0];
+    expect(resetLink).toEqual(expect.any(String));
+    const resetToken = new URL(resetLink as string).searchParams.get("token");
+    const reset = await request(http)
+      .post("/api/auth/reset-password")
+      .send({ token: resetToken, password: "replacement-secure-password" })
+      .expect(200);
+    expect(reset.body.accessToken).toEqual(expect.any(String));
+
+    await request(http)
+      .get("/api/users/me")
+      .set("Authorization", `Bearer ${originalToken}`)
+      .expect(401);
+    await request(http)
+      .post("/api/auth/reset-password")
+      .send({ token: resetToken, password: "another-secure-password" })
+      .expect(400);
+    await request(http)
+      .post("/api/auth/login")
+      .send({ email: "mail-flow@example.com", password: "replacement-secure-password" })
+      .expect(200);
   });
 });

@@ -9,12 +9,12 @@ export type IconName =
   | 'table'
   | 'ranking'
   | 'shirt'
-  | 'logout'
   | 'coins'
   | 'clock'
   | 'check'
   | 'wifi'
   | 'refresh'
+  | 'user'
   | 'chevron';
 
 export function Icon({ name, className = 'h-5 w-5', ...props }: { name: IconName; className?: string } & SVGProps<SVGSVGElement>) {
@@ -43,8 +43,6 @@ export function Icon({ name, className = 'h-5 w-5', ...props }: { name: IconName
       return <svg {...common}><path d="M4 20v-6h5v6m6 0V9h5v11M9 20V4h6v16"/><path d="M10.5 7h3M5.5 17h2M16.5 12h2"/></svg>;
     case 'shirt':
       return <svg {...common}><path d="m8 4-5 3 2 4 2-1v10h10V10l2 1 2-4-5-3a4.5 4.5 0 0 1-8 0Z"/></svg>;
-    case 'logout':
-      return <svg {...common}><path d="M10 5H5v14h5m4-3 4-4-4-4m4 4H9"/></svg>;
     case 'coins':
       return <svg {...common}><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v4c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 10v4c0 1.7 3.1 3 7 3s7-1.3 7-3v-4M5 14v4c0 1.7 3.1 3 7 3s7-1.3 7-3v-4"/></svg>;
     case 'clock':
@@ -55,6 +53,8 @@ export function Icon({ name, className = 'h-5 w-5', ...props }: { name: IconName
       return <svg {...common}><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 20h.01M2 9a14.5 14.5 0 0 1 20 0"/></svg>;
     case 'refresh':
       return <svg {...common}><path d="M20 7v5h-5M4 17v-5h5"/><path d="M18.2 10A7 7 0 0 0 6 7.5L4 12m16 0-2 4.5A7 7 0 0 1 5.8 14"/></svg>;
+    case 'user':
+      return <svg {...common}><circle cx="12" cy="8" r="4"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg>;
     case 'chevron':
       return <svg {...common}><path d="m9 18 6-6-6-6"/></svg>;
   }
@@ -73,14 +73,18 @@ export function Brand({ light = false }: { light?: boolean }) {
   );
 }
 
-export function CoinBalance({ value, compact = false }: { value: Numeric; compact?: boolean }) {
+export function CoinBalance({ value, compact = false, inverted = false }: { value: Numeric; compact?: boolean; inverted?: boolean }) {
   return (
-    <div className={`inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 font-bold text-ink ${compact ? 'px-3 py-1.5 text-sm' : 'px-4 py-2'}`}>
+    <div className={`inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 font-bold ${inverted ? 'text-white' : 'text-ink'} ${compact ? 'px-3 py-1.5 text-sm' : 'px-4 py-2'}`}>
       <span className="grid h-6 w-6 place-items-center rounded-full bg-gold text-amber-950">
         <Icon name="coins" className="h-3.5 w-3.5" />
       </span>
       <span>{formatCoins(value)}</span>
-      {!compact && <span className="text-xs font-semibold uppercase tracking-wider text-ink/50">coins</span>}
+      {!compact && (
+        <span className={`text-xs font-semibold uppercase tracking-wider ${inverted ? 'text-white' : 'text-ink/50'}`}>
+          coins
+        </span>
+      )}
     </div>
   );
 }

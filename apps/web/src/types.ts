@@ -6,6 +6,7 @@ import type {
   Market,
   MatchResultPayload,
   MatchStatus,
+  PublicManagerProfileDto,
   PublicTeamProfileDto,
   PublicTeamMatchHistoryPageDto,
   PublicTeamSummaryDto,
@@ -23,18 +24,39 @@ export interface DTAssignment {
   claimedAt?: string;
   formation?: string | null;
   tactics?: Record<string, unknown> | null;
+  team?: {
+    id: string;
+    name: string;
+    crestImageUrl: string | null;
+  };
 }
 
 export interface User {
   id: string;
   email: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+  emailVerified: boolean;
   coinBalance: Numeric;
+  createdAt: string;
+  updatedAt: string;
   dtAssignment?: DTAssignment | null;
 }
 
 export interface AuthResponse {
-  accessToken: string;
   user: User;
+}
+
+export type PublicManagerProfile = PublicManagerProfileDto;
+
+export interface LedgerEntry {
+  id: string;
+  type: 'TOPUP' | 'STAKE' | 'PAYOUT' | 'REFUND';
+  amount: number;
+  balanceAfter: number;
+  reference: string;
+  createdAt: string;
 }
 
 export interface Team extends PublicTeamSummaryDto {

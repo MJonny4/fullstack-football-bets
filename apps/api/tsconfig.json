@@ -3,11 +3,11 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": ".",
-    "baseUrl": ".",
     "ignoreDeprecations": "5.0",
+    "baseUrl": ".",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "types": ["node"]
+    "types": ["node", "express", "multer"]
   },
   "include": ["src/**/*.ts", "test/**/*.ts", "vitest.config.ts"]
 }

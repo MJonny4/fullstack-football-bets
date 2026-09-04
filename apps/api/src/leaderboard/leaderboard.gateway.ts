@@ -11,7 +11,9 @@ import { LeaderboardService } from "./leaderboard.service.js";
 
 function socketCorsOrigin(): string | string[] | boolean {
   const configured = process.env.CORS_ORIGIN?.trim();
-  return configured ? configured.split(",").map((value) => value.trim()) : true;
+  return configured
+    ? configured.split(",").map((value) => value.trim())
+    : ["http://localhost:8080", "http://localhost:5173"];
 }
 
 @WebSocketGateway({
@@ -62,8 +64,8 @@ export class LeaderboardGateway implements OnGatewayConnection {
 
   emitTeamUpdate(payload: {
     teamId: string;
-    lineupId: string | null;
-    strengthRating: number;
+    lineupId?: string | null;
+    strengthRating?: number;
   }): void {
     this.server?.emit("team:update", payload);
   }

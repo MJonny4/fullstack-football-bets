@@ -1,11 +1,11 @@
 import { Body, Controller, Delete, Get, Inject, Param, Post, UseGuards } from "@nestjs/common";
 import { CurrentUser, type AuthenticatedUser } from "../common/current-user.decorator.js";
-import { JwtAuthGuard } from "../common/jwt-auth.guard.js";
+import { SessionAuthGuard } from "../common/session-auth.guard.js";
 import { PlaceBetDto } from "./bets.dto.js";
 import { BetsService } from "./bets.service.js";
 
 @Controller("bets")
-@UseGuards(JwtAuthGuard)
+@UseGuards(SessionAuthGuard)
 export class BetsController {
   constructor(@Inject(BetsService) private readonly bets: BetsService) {}
 

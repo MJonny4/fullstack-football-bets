@@ -3,6 +3,7 @@ import type {
   BettingLeaderboardEntryDto,
   PublicManagerTeamDto,
 } from "@fb/shared";
+import { avatarUrl } from "../common/user-response.js";
 
 export type LeaderboardBetStatus = BetStatus;
 
@@ -11,6 +12,9 @@ export type LeaderboardTeam = PublicManagerTeamDto;
 export interface LeaderboardUserSource {
   id: string;
   email: string;
+  username?: string;
+  displayName?: string;
+  avatarUpdatedAt?: Date | null;
   coinBalance: number;
   createdAt: Date;
   team: LeaderboardTeam | null;
@@ -68,7 +72,7 @@ function publicDisplayNames(users: readonly LeaderboardUserSource[]): Map<string
     .map((user) => ({
       id: user.id,
       createdAt: user.createdAt,
-      base: managerAliasBase(user.email),
+      base: user.displayName?.trim() || managerAliasBase(user.email),
     }))
     .sort(
       (left, right) =>
@@ -174,6 +178,8 @@ export function buildBettingLeaderboard(
       rank: null,
       userId: user.id,
       displayName: displayNames.get(user.id) ?? "Manager",
+      username: user.username ?? `manager_${user.id}`,
+      avatarUrl: user.username ? avatarUrl({ username: user.username, avatarUpdatedAt: user.avatarUpdatedAt }) : null,
       team: user.team,
       coinBalance: user.coinBalance,
       settledBets,

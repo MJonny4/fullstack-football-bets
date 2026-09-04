@@ -7,17 +7,19 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { ApiError, api, clearAccessToken, getAccessToken, setAccessToken } from '../lib/api';
+import { ApiError, api } from '../lib/api';
 import type { Numeric, User } from '../types';
 
 type AuthMode = 'login' | 'signup';
+interface SignupProfile { username: string; displayName: string }
 
 interface AuthContextValue {
   user: User | null;
   initializing: boolean;
-  authenticate: (mode: AuthMode, email: string, password: string) => Promise<void>;
-  logout: () => void;
+  authenticate: (mode: AuthMode, email: string, password: string, profile?: SignupProfile) => Promise<void>;
+  logout: () => Promise<void>;
   refreshUser: () => Promise<User>;
+  replaceUser: (user: User) => void;
   updateBalance: (balance: Numeric) => void;
 }
 
@@ -27,9 +29,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [initializing, setInitializing] = useState(true);
 
-  const logout = useCallback(() => {
-    clearAccessToken();
-    setUser(null);
+  const logout = useCallback(async () => {
+    try {
+      await api.logout();
+    } catch {
+      // Local state still closes immediately if an expired session cannot be revoked.
+    } finally {
+      setUser(null);
+    }
   }, []);
 
   const refreshUser = useCallback(async () => {
@@ -38,25 +45,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(nextUser);
       return nextUser;
     } catch (error) {
-      if (error instanceof ApiError && error.status === 401) logout();
+      if (error instanceof ApiError && error.status === 401) setUser(null);
       throw error;
     }
-  }, [logout]);
+  }, []);
 
   useEffect(() => {
     let active = true;
 
     async function restoreSession() {
-      if (!getAccessToken()) {
-        setInitializing(false);
-        return;
-      }
-
       try {
         const currentUser = await api.me();
         if (active) setUser(currentUser);
       } catch {
-        if (active) logout();
+        if (active) setUser(null);
       } finally {
         if (active) setInitializing(false);
       }
@@ -66,13 +68,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, [logout]);
-
-  const authenticate = useCallback(async (mode: AuthMode, email: string, password: string) => {
-    const response = mode === 'login' ? await api.login(email, password) : await api.signup(email, password);
-    setAccessToken(response.accessToken);
-    setUser(response.user);
   }, []);
+
+  const authenticate = useCallback(async (mode: AuthMode, email: string, password: string, profile?: SignupProfile) => {
+    const response = mode === 'login'
+      ? await api.login(email, password)
+      : await api.signup({
+          email,
+          password,
+          username: profile?.username ?? '',
+          displayName: profile?.displayName ?? '',
+        });
+    try {
+      setUser(await api.me());
+    } catch {
+      setUser(response.user);
+    }
+  }, []);
+
+  const replaceUser = useCallback((nextUser: User) => setUser(nextUser), []);
 
   const updateBalance = useCallback((balance: Numeric) => {
     setUser((current) => current ? { ...current, coinBalance: balance } : current);
@@ -84,8 +98,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     authenticate,
     logout,
     refreshUser,
+    replaceUser,
     updateBalance,
-  }), [authenticate, initializing, logout, refreshUser, updateBalance, user]);
+  }), [authenticate, initializing, logout, refreshUser, replaceUser, updateBalance, user]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
