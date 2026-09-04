@@ -30,11 +30,28 @@ interface MarketGroup {
 function quoteLabel(quote: OddsQuote, match: Match): string {
   const normalizedMarket = normalizeMarket(quote.market);
   const normalizedSelection = quote.selection.trim().toUpperCase();
-  const isMatchResult = ['MATCH_RESULT', 'ONE_X_TWO', '1X2'].includes(normalizedMarket);
+  const isMatchResult = isMatchResultMarket(normalizedMarket);
 
   if (isMatchResult && ['HOME', '1'].includes(normalizedSelection)) return match.homeTeam.name;
   if (isMatchResult && ['AWAY', '2'].includes(normalizedSelection)) return match.awayTeam.name;
   return selectionLabel(quote.selection);
+}
+
+function isMatchResultMarket(market: string): boolean {
+  return ['MATCH_RESULT', 'ONE_X_TWO', '1X2'].includes(market);
+}
+
+function orderedMatchResultQuotes(group: MarketGroup | undefined): [OddsQuote, OddsQuote, OddsQuote] | null {
+  if (!group || !isMatchResultMarket(group.key)) return null;
+
+  const findSelection = (...selections: string[]) => group.quotes.find((quote) =>
+    selections.includes(quote.selection.trim().toUpperCase()),
+  );
+  const home = findSelection('HOME', '1');
+  const draw = findSelection('DRAW', 'X');
+  const away = findSelection('AWAY', '2');
+
+  return home && draw && away ? [home, draw, away] : null;
 }
 
 function groupQuotes(quotes: OddsQuote[]): MarketGroup[] {
@@ -69,6 +86,7 @@ export function MatchCard({ match, balance, bettingClosed, ownTeamInvolved, onPl
   const isAffordable = isValidStake && stakeValue <= balance;
   const potentialReturn = selected && isValidStake ? Math.floor(stakeValue * toNumber(selected.odds)) : 0;
   const isResolved = match.status.toUpperCase() === 'RESOLVED';
+  const matchResultQuotes = orderedMatchResultQuotes(currentGroup);
 
   function chooseMarket(key: string) {
     setActiveMarket(key);
@@ -99,6 +117,42 @@ export function MatchCard({ match, balance, bettingClosed, ownTeamInvolved, onPl
     }
   }
 
+  function renderQuoteButton(quote: OddsQuote, centered = false) {
+    const chosen = selected?.market === quote.market && selected?.selection === quote.selection;
+    return (
+      <button
+        aria-pressed={chosen}
+        className={`group min-w-0 rounded-xl border px-2 py-2.5 transition disabled:cursor-not-allowed disabled:opacity-55 ${centered ? 'w-full text-center' : 'text-left'} ${chosen ? 'border-pitch-600 bg-pitch-50 ring-2 ring-pitch-100' : 'border-slate-200 bg-white hover:border-pitch-300 hover:bg-pitch-50/50'}`}
+        disabled={bettingClosed || isResolved || ownTeamInvolved}
+        key={`${quote.market}:${quote.selection}`}
+        onClick={() => {
+          setSelected(quote);
+          setMessage(null);
+        }}
+        type="button"
+      >
+        <span className={`block truncate text-[11px] font-bold ${chosen ? 'text-pitch-800' : 'text-slate-500'}`}>{quoteLabel(quote, match)}</span>
+        <span className={`mt-1 block font-display text-base font-bold ${chosen ? 'text-pitch-800' : 'text-ink'}`}>{formatOdds(quote.odds)}</span>
+      </button>
+    );
+  }
+
+  const teamBoard = (
+    <div className={`grid grid-cols-3 items-start gap-x-2 ${matchResultQuotes ? 'gap-y-4' : ''}`}>
+      <TeamLink className="min-w-0 items-center justify-self-center" team={match.homeTeam} />
+      <div className="justify-self-center text-center">
+        {score ? (
+          <div className="font-display text-3xl font-bold tracking-tight text-ink">{score}</div>
+        ) : (
+          <div className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-extrabold uppercase tracking-widest text-slate-400">vs</div>
+        )}
+        <div className="mt-2 text-[10px] font-bold uppercase tracking-[.16em] text-slate-400">{score ? 'Full time' : 'Fixture'}</div>
+      </div>
+      <TeamLink className="min-w-0 items-center justify-self-center" team={match.awayTeam} />
+      {matchResultQuotes?.map((quote) => renderQuoteButton(quote, true))}
+    </div>
+  );
+
   return (
     <article className="overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white shadow-card">
       <header className="border-b border-slate-100 bg-slate-50/70 px-5 py-4 sm:px-6">
@@ -114,22 +168,9 @@ export function MatchCard({ match, balance, bettingClosed, ownTeamInvolved, onPl
       </header>
 
       <div className="px-5 pb-5 pt-6 sm:px-6 sm:pb-6">
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-5">
-          <TeamLink className="min-w-0" team={match.homeTeam} />
-          <div className="text-center">
-            {score ? (
-              <div className="font-display text-3xl font-bold tracking-tight text-ink">{score}</div>
-            ) : (
-              <div className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-extrabold uppercase tracking-widest text-slate-400">vs</div>
-            )}
-            <div className="mt-2 text-[10px] font-bold uppercase tracking-[.16em] text-slate-400">{score ? 'Full time' : 'Fixture'}</div>
-          </div>
-          <TeamLink className="min-w-0" team={match.awayTeam} />
-        </div>
-
         {groups.length > 0 ? (
           <>
-            <div className="hide-scrollbar -mx-1 mt-7 flex gap-1 overflow-x-auto border-b border-slate-100 px-1" role="tablist" aria-label="Bet markets">
+            <div className="hide-scrollbar -mx-1 flex gap-1 overflow-x-auto border-b border-slate-100 px-1" role="tablist" aria-label="Bet markets">
               {groups.map((group) => (
                 <button
                   aria-selected={currentGroup?.key === group.key}
@@ -144,30 +185,14 @@ export function MatchCard({ match, balance, bettingClosed, ownTeamInvolved, onPl
               ))}
             </div>
 
-            {currentGroup && (
+            <div className="mt-5">{teamBoard}</div>
+
+            {currentGroup && !matchResultQuotes && (
               <div
                 className={`mt-4 grid gap-2 ${currentGroup.quotes.length > 6 ? 'grid-cols-4 sm:grid-cols-5' : currentGroup.quotes.length === 3 ? 'grid-cols-3' : 'grid-cols-2'}`}
                 role="tabpanel"
               >
-                {currentGroup.quotes.map((quote) => {
-                  const chosen = selected?.market === quote.market && selected?.selection === quote.selection;
-                  return (
-                    <button
-                      aria-pressed={chosen}
-                      className={`group min-w-0 rounded-xl border px-2 py-2.5 text-left transition disabled:cursor-not-allowed disabled:opacity-55 ${chosen ? 'border-pitch-600 bg-pitch-50 ring-2 ring-pitch-100' : 'border-slate-200 bg-white hover:border-pitch-300 hover:bg-pitch-50/50'}`}
-                      disabled={bettingClosed || isResolved || ownTeamInvolved}
-                      key={`${quote.market}:${quote.selection}`}
-                      onClick={() => {
-                        setSelected(quote);
-                        setMessage(null);
-                      }}
-                      type="button"
-                    >
-                      <span className={`block truncate text-[11px] font-bold ${chosen ? 'text-pitch-800' : 'text-slate-500'}`}>{quoteLabel(quote, match)}</span>
-                      <span className={`mt-1 block font-display text-base font-bold ${chosen ? 'text-pitch-800' : 'text-ink'}`}>{formatOdds(quote.odds)}</span>
-                    </button>
-                  );
-                })}
+                {currentGroup.quotes.map((quote) => renderQuoteButton(quote))}
               </div>
             )}
 
@@ -222,7 +247,10 @@ export function MatchCard({ match, balance, bettingClosed, ownTeamInvolved, onPl
             {message && <div className="mt-2"><Alert tone={message.tone}>{message.text}</Alert></div>}
           </>
         ) : (
-          <div className="mt-7 rounded-2xl bg-slate-50 px-4 py-5 text-center text-sm font-semibold text-slate-400">Odds are not available yet.</div>
+          <>
+            {teamBoard}
+            <div className="mt-7 rounded-2xl bg-slate-50 px-4 py-5 text-center text-sm font-semibold text-slate-400">Odds are not available yet.</div>
+          </>
         )}
       </div>
     </article>
