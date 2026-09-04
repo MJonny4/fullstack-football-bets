@@ -1,6 +1,5 @@
 import { Transform } from "class-transformer";
 import {
-  IsEmail,
   IsOptional,
   IsString,
   Matches,
@@ -8,21 +7,7 @@ import {
   MinLength,
 } from "class-validator";
 
-export class CredentialsDto {
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === "string" ? value.trim().toLowerCase() : value,
-  )
-  @IsEmail()
-  @MaxLength(254)
-  email!: string;
-
-  @IsString()
-  @MinLength(8)
-  @MaxLength(72)
-  password!: string;
-}
-
-export class SignupDto extends CredentialsDto {
+export class UpdateProfileDto {
   @IsOptional()
   @Transform(({ value }: { value: unknown }) =>
     typeof value === "string" ? value.trim().toLowerCase() : value,
@@ -45,23 +30,19 @@ export class SignupDto extends CredentialsDto {
   displayName?: string;
 }
 
-export class ForgotPasswordDto {
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === "string" ? value.trim().toLowerCase() : value,
-  )
-  @IsEmail()
-  @MaxLength(254)
-  email!: string;
-}
-
-export class TokenDto {
+export class ChangePasswordDto {
   @IsString()
-  @MinLength(32)
-  @MaxLength(256)
-  token!: string;
+  @MinLength(8)
+  @MaxLength(72)
+  currentPassword!: string;
+
+  @IsString()
+  @MinLength(8)
+  @MaxLength(72)
+  newPassword!: string;
 }
 
-export class ResetPasswordDto extends TokenDto {
+export class DeactivateAccountDto {
   @IsString()
   @MinLength(8)
   @MaxLength(72)

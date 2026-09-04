@@ -5,6 +5,7 @@ import { SecurityModule } from "./common/security.module.js";
 import { DevModule } from "./dev/dev.module.js";
 import { HealthController } from "./health.controller.js";
 import { LeaderboardModule } from "./leaderboard/leaderboard.module.js";
+import { MailModule } from "./mail/mail.module.js";
 import { RoundsModule } from "./rounds/rounds.module.js";
 import { StandingsModule } from "./standings/standings.module.js";
 import { TeamsModule } from "./teams/teams.module.js";
@@ -14,6 +15,7 @@ import { UsersModule } from "./users/users.module.js";
   imports: [
     SecurityModule,
     LeaderboardModule,
+    MailModule,
     AuthModule,
     UsersModule,
     RoundsModule,

@@ -26,7 +26,7 @@ import {
 import { isPrismaError } from "../common/prisma-errors.js";
 import { serializeTeam } from "../common/team-response.js";
 import { LeaderboardGateway } from "../leaderboard/leaderboard.gateway.js";
-import { managerAliasBase } from "../leaderboard/leaderboard-ranking.js";
+import { publicUserResponse } from "../common/user-response.js";
 import { StandingsService } from "../standings/standings.service.js";
 import type { SaveLineupDraftDto, SaveLineupDto } from "./teams.dto.js";
 
@@ -384,7 +384,16 @@ export class TeamsService {
         where: { id: teamId },
         include: {
           dtAssignment: {
-            select: { userId: true, user: { select: { email: true } } },
+            select: {
+              userId: true,
+              user: {
+                select: {
+                  username: true,
+                  displayName: true,
+                  avatarUpdatedAt: true,
+                },
+              },
+            },
           },
           players: true,
           currentOfficialLineup: {
@@ -456,7 +465,7 @@ export class TeamsService {
       defenseRating: Number(team.defenseRating),
       goalkeeperRating: Number(team.goalkeeperRating),
       manager: team.dtAssignment
-        ? { displayName: managerAliasBase(team.dtAssignment.user.email) }
+        ? publicUserResponse(team.dtAssignment.user)
         : null,
       standing: standing
         ? {

@@ -10,12 +10,12 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { CurrentUser, type AuthenticatedUser } from "../common/current-user.decorator.js";
-import { JwtAuthGuard } from "../common/jwt-auth.guard.js";
+import { SessionAuthGuard } from "../common/session-auth.guard.js";
 import { SaveLineupDraftDto, SaveLineupDto } from "./teams.dto.js";
 import { TeamsService } from "./teams.service.js";
 
 @Controller("teams")
-@UseGuards(JwtAuthGuard)
+@UseGuards(SessionAuthGuard)
 export class TeamsController {
   constructor(@Inject(TeamsService) private readonly teams: TeamsService) {}
 

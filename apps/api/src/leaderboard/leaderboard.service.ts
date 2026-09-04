@@ -7,10 +7,14 @@ export class LeaderboardService {
   async list() {
     return prisma.$transaction(async (tx) => {
       const users = await tx.user.findMany({
+        where: { deactivatedAt: null },
         orderBy: [{ createdAt: "asc" }, { id: "asc" }],
         select: {
           id: true,
           email: true,
+          username: true,
+          displayName: true,
+          avatarUpdatedAt: true,
           coinBalance: true,
           createdAt: true,
           dtAssignment: {
