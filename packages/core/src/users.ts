@@ -5,6 +5,8 @@ export const DEFAULT_INITIAL_BALANCE = 1_000;
 
 export interface CreateUserInput {
   email: string;
+  username: string;
+  displayName: string;
   passwordHash: string;
   initialBalance?: number;
 }
@@ -20,13 +22,20 @@ export async function createUserWithInitialBalance(
     throw new RangeError("initialBalance must be a positive whole number");
   }
   const email = input.email.trim().toLowerCase();
-  if (email.length === 0 || input.passwordHash.length === 0) {
-    throw new RangeError("email and passwordHash are required");
+  const username = input.username.trim().toLowerCase();
+  const displayName = input.displayName.trim();
+  if (
+    email.length === 0 ||
+    username.length === 0 ||
+    displayName.length === 0 ||
+    input.passwordHash.length === 0
+  ) {
+    throw new RangeError("email, username, displayName, and passwordHash are required");
   }
 
   return db.$transaction(async (tx: Prisma.TransactionClient) => {
     const created = await tx.user.create({
-      data: { email, passwordHash: input.passwordHash },
+      data: { email, username, displayName, passwordHash: input.passwordHash },
     });
     await applyWalletTransaction(
       tx,

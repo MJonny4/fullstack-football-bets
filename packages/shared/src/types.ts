@@ -127,7 +127,7 @@ export interface PublicTeamProfileDto extends PublicTeamSummaryDto {
   midfieldRating: number;
   defenseRating: number;
   goalkeeperRating: number;
-  manager: { displayName: string } | null;
+  manager: PublicManagerIdentityDto | null;
   standing: PublicTeamStandingDto | null;
   officialLineup: PublicOfficialLineupDto | null;
   alternatives: PublicAlternativeLineupDto[];
@@ -182,8 +182,23 @@ export interface ResultEngine {
 export interface UserDto {
   id: string;
   email: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+  emailVerified: boolean;
   coinBalance: number;
   createdAt: string;
+  updatedAt: string;
+}
+
+export interface PublicManagerIdentityDto {
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
+export interface PublicManagerProfileDto extends PublicManagerIdentityDto {
+  team: PublicManagerTeamDto | null;
 }
 
 export interface DTAssignmentDto {
@@ -256,6 +271,8 @@ export interface BettingLeaderboardEntryDto {
   rank: number | null;
   userId: string;
   displayName: string;
+  username: string;
+  avatarUrl: string | null;
   team: PublicManagerTeamDto | null;
   coinBalance: number;
   settledBets: number;

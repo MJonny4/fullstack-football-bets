@@ -12,6 +12,7 @@ export {
   Prisma,
   PrismaClient,
   BetStatus,
+  AccountTokenPurpose,
   LedgerType,
   Market,
   MatchStatus,
@@ -37,4 +38,6 @@ export type {
   MatchLineupSnapshot,
   MatchLineupSnapshotSlot,
   User,
+  UserSession,
+  AccountToken,
 } from "@prisma/client";
