@@ -3,15 +3,18 @@ import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from 'reac
 import { io } from 'socket.io-client';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { AuthScreen } from './components/AuthScreen';
+import { AccountMenu } from './components/AccountMenu';
 import { BetsPage } from './components/BetsPage';
 import { LeaderboardPage } from './components/LeaderboardPage';
 import { LeagueTablePage } from './components/LeagueTablePage';
 import { MatchesPage } from './components/MatchesPage';
+import { ProfilePage } from './components/ProfilePage';
+import { PublicManagerProfilePage } from './components/PublicManagerProfilePage';
 import { TeamPage } from './components/TeamPage';
 import { TeamProfilePage } from './components/TeamProfilePage';
 import { Alert, Brand, CoinBalance, Icon, Spinner, type IconName } from './components/ui';
-import { ApiError, api, getAccessToken, readableError } from './lib/api';
-import { initials, toNumber } from './lib/format';
+import { ApiError, api, readableError } from './lib/api';
+import { toNumber } from './lib/format';
 import type { Bet, BettingLeaderboardEntry, LeagueStandings, LineupInput, PlaceBetInput, Round, Team } from './types';
 
 const NAVIGATION: { path: string; label: string; mobileLabel?: string; icon: IconName }[] = [
@@ -32,6 +35,7 @@ export default function App() {
 
 function AppContent() {
   const { user, initializing } = useAuth();
+  const location = useLocation();
 
   if (initializing) {
     return (
@@ -44,11 +48,14 @@ function AppContent() {
     );
   }
 
+  if (location.pathname === '/verify-email' || location.pathname === '/reset-password') {
+    return <AuthScreen />;
+  }
   return user ? <Dashboard /> : <AuthScreen />;
 }
 
 function Dashboard() {
-  const { user, logout, refreshUser, updateBalance } = useAuth();
+  const { user, logout, refreshUser, replaceUser, updateBalance } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [round, setRound] = useState<Round | null>(null);
@@ -78,7 +85,7 @@ function Dashboard() {
       setLeaderboard(currentLeaderboard);
       setTeams(currentTeams);
     } catch (cause) {
-      if (cause instanceof ApiError && cause.status === 401) logout();
+      if (cause instanceof ApiError && cause.status === 401) void logout();
       else setError(readableError(cause));
     } finally {
       setLoading(false);
@@ -93,10 +100,9 @@ function Dashboard() {
     const userId = user?.id;
     if (!userId) return;
 
-    const token = getAccessToken();
     const socket = io({
       path: '/socket.io',
-      auth: token ? { token } : undefined,
+      withCredentials: true,
     });
 
     function receiveLeaderboard(payload: unknown) {
@@ -191,6 +197,8 @@ function Dashboard() {
   const mobileContext = selectedNavigation ?? (
     location.pathname.startsWith('/teams/')
       ? { icon: 'shirt' as const, label: 'Club profile' }
+      : location.pathname === '/profile' || location.pathname.startsWith('/managers/')
+        ? { icon: 'user' as const, label: 'Manager profile' }
       : { icon: 'ball' as const, label: 'Touchline' }
   );
 
@@ -224,15 +232,7 @@ function Dashboard() {
               <CoinBalance compact value={user.coinBalance} />
             </div>
             <div className="hidden h-10 w-px bg-white/15 sm:block" />
-            <div className="hidden min-w-0 sm:block lg:hidden xl:block">
-              <div className="max-w-40 truncate text-xs font-extrabold text-white">{user.email}</div>
-              <div className="text-[10px] font-semibold text-pitch-200/70">League manager</div>
-            </div>
-            <span className="hidden h-10 w-10 place-items-center rounded-2xl border border-white/15 bg-white/10 text-xs font-extrabold text-pitch-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_5px_12px_-7px_rgba(0,0,0,0.9)] sm:grid">{initials(user.email)}</span>
-            <button className="grid h-10 w-10 place-items-center rounded-2xl border border-transparent text-white/60 transition-all hover:border-white/10 hover:bg-white/10 hover:text-rose-200 focus-visible:outline-white" onClick={logout} title="Sign out" type="button">
-              <Icon className="h-5 w-5" name="logout" />
-              <span className="sr-only">Sign out</span>
-            </button>
+            <AccountMenu onLogout={logout} user={user} />
           </div>
         </div>
       </header>
@@ -262,6 +262,8 @@ function Dashboard() {
               <Route path="/standings" element={<LeagueTablePage standings={standings} user={user} />} />
               <Route path="/bets" element={<BetsPage bets={bets} onBrowse={() => navigate('/matches')} onCancel={cancelBet} round={round} />} />
               <Route path="/leaderboard" element={<LeaderboardPage connected={socketConnected} entries={leaderboard} user={user} />} />
+              <Route path="/profile" element={<ProfilePage leaderboardEntry={leaderboard.find((entry) => entry.userId === user.id)} onLogout={logout} onUserChange={replaceUser} user={user} />} />
+              <Route path="/managers/:username" element={<PublicManagerProfilePage />} />
               <Route path="/my-team" element={<TeamPage onClaim={claimTeam} onRefresh={refreshFootballData} onSaveLineup={saveLineup} teams={teams} user={user} />} />
               <Route path="/teams/:teamId" element={<TeamProfilePage />} />
               <Route path="*" element={<Navigate replace to="/matches" />} />
@@ -292,6 +294,8 @@ function isBettingLeaderboardEntry(value: unknown): value is BettingLeaderboardE
   return (entry.rank === null || typeof entry.rank === 'number')
     && typeof entry.userId === 'string'
     && typeof entry.displayName === 'string'
+    && typeof entry.username === 'string'
+    && (entry.avatarUrl === null || typeof entry.avatarUrl === 'string')
     && typeof entry.netProfit === 'number'
     && typeof entry.settledBets === 'number'
     && (typeof entry.coinBalance === 'number' || typeof entry.coinBalance === 'string');
