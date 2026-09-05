@@ -339,7 +339,8 @@ function MatchHistoryRow({
   teamId: string;
 }) {
   const isHome = fixture.homeTeam.id === teamId;
-  const opponent = isHome ? fixture.awayTeam : fixture.homeTeam;
+  const homeScore = fixture.result?.homeScore ?? null;
+  const awayScore = fixture.result?.awayScore ?? null;
   const scored = fixture.result
     ? isHome ? fixture.result.homeScore : fixture.result.awayScore
     : null;
@@ -356,32 +357,45 @@ function MatchHistoryRow({
       : outcome === 'D'
         ? 'bg-amber-100 text-amber-800'
         : 'bg-slate-100 text-slate-500';
+  const scoreClass = 'grid h-8 w-8 place-items-center rounded-lg bg-slate-100 font-display text-sm font-bold tabular-nums text-ink';
+  const teamRowClass = 'flex min-w-0 items-center gap-2 rounded-lg px-2 py-1.5';
 
   return (
-    <article className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:gap-4 sm:px-4">
-      <span
-        aria-label={outcome === 'W' ? 'Win' : outcome === 'L' ? 'Loss' : outcome === 'D' ? 'Draw' : 'Result unavailable'}
-        className={`grid h-8 w-8 place-items-center rounded-lg font-display text-xs font-bold ${outcomeStyle}`}
-      >
-        {outcome ?? '–'}
-      </span>
+    <article className="grid grid-cols-[5rem_minmax(0,1fr)_2rem] items-center gap-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:grid-cols-[6rem_minmax(0,1fr)_2.25rem] sm:gap-3 sm:px-4">
       <div className="min-w-0">
-        <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[9px] font-extrabold uppercase tracking-[.12em] text-slate-400">
-          <span>Matchweek {fixture.weekNumber}</span>
-          <span aria-hidden="true">·</span>
-          <span>{isHome ? 'Home' : 'Away'}</span>
-          <span aria-hidden="true">·</span>
-          <time dateTime={fixture.scheduledAt}>{formatDate(fixture.scheduledAt)}</time>
+        <div className="flex items-center gap-1.5">
+          <span
+            aria-label={outcome === 'W' ? 'Win' : outcome === 'L' ? 'Loss' : outcome === 'D' ? 'Draw' : 'Result unavailable'}
+            className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg font-display text-xs font-bold ${outcomeStyle}`}
+          >
+            {outcome ?? '–'}
+          </span>
+          <span className="text-[8px] font-extrabold uppercase tracking-wider text-slate-400">
+            MW {fixture.weekNumber}
+          </span>
         </div>
-        <TeamLink compact team={opponent} />
+        <time className="mt-1 block text-[10px] font-bold leading-4 text-slate-500" dateTime={fixture.scheduledAt}>
+          {formatDate(fixture.scheduledAt)}
+        </time>
+        <span className="mt-0.5 block text-[8px] font-extrabold uppercase tracking-wider text-slate-400">
+          {isHome ? 'Home' : 'Away'}
+        </span>
       </div>
-      <div className="text-right">
-        <div className="font-display text-lg font-bold tabular-nums text-ink sm:text-xl">
-          {scored === null || conceded === null ? '–' : `${scored}–${conceded}`}
+
+      <div className="grid min-w-0 gap-1">
+        <div className={`${teamRowClass} ${isHome ? 'bg-pitch-50' : 'bg-slate-50'}`}>
+          <span className="w-5 shrink-0 text-[8px] font-extrabold uppercase tracking-wider text-slate-400">H</span>
+          <TeamLink className="[&>span:last-child]:min-w-0 [&>span:last-child]:truncate" compact team={fixture.homeTeam} />
         </div>
-        <div className="text-[8px] font-extrabold uppercase tracking-wider text-slate-400">
-          {isHome ? 'vs' : 'at'} {opponent.name}
+        <div className={`${teamRowClass} ${!isHome ? 'bg-pitch-50' : 'bg-slate-50'}`}>
+          <span className="w-5 shrink-0 text-[8px] font-extrabold uppercase tracking-wider text-slate-400">A</span>
+          <TeamLink className="[&>span:last-child]:min-w-0 [&>span:last-child]:truncate" compact team={fixture.awayTeam} />
         </div>
+      </div>
+
+      <div className="grid gap-1 justify-self-end">
+        <span className={scoreClass}>{homeScore ?? '–'}</span>
+        <span className={scoreClass}>{awayScore ?? '–'}</span>
       </div>
     </article>
   );
