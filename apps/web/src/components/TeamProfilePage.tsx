@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import {
   FORMATION_PITCH_ROWS,
+  formatMatchClock,
+  isLiveMatchSummary,
+  isNewerLive,
   type PublicLineupAssignmentDto,
   type PublicPlayerDto,
   type PublicTeamFixtureDto,
@@ -317,15 +320,15 @@ function Squad({
 }
 
 function FixtureRow({ fixture }: { fixture: PublicTeamFixtureDto }) {
-  const score = fixture.result
+  const score = fixture.live ? `${formatMatchClock(fixture.live.second, fixture.live.period, fixture.live.phase)} ${fixture.live.homeScore}–${fixture.live.awayScore}` : fixture.result
     ? `${fixture.result.homeScore}–${fixture.result.awayScore}`
     : formatDate(fixture.scheduledAt);
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 rounded-xl border border-slate-200 bg-white p-3">
       <TeamLink className="justify-self-start" compact team={fixture.homeTeam} />
-      <div className="rounded-lg bg-slate-100 px-2 py-1 text-center font-display text-xs font-bold text-ink">
+      <Link to={`/matches/${fixture.id}/live`} className={`rounded-lg px-2 py-1 text-center font-display text-xs font-bold ${fixture.live ? 'bg-pitch-100 text-pitch-800' : 'bg-slate-100 text-ink'}`}>
         {score}
-      </div>
+      </Link>
       <TeamLink className="justify-self-end [&>span:last-child]:text-right" compact team={fixture.awayTeam} />
     </div>
   );
@@ -393,10 +396,10 @@ function MatchHistoryRow({
         </div>
       </div>
 
-      <div className="grid gap-1 justify-self-end">
+      <Link to={`/matches/${fixture.id}/live`} aria-label="Open match recap" className="grid gap-1 justify-self-end">
         <span className={scoreClass}>{homeScore ?? '–'}</span>
         <span className={scoreClass}>{awayScore ?? '–'}</span>
-      </div>
+      </Link>
     </article>
   );
 }
@@ -547,13 +550,21 @@ export function TeamProfilePage() {
     function receiveStandingsUpdate() {
       load(false);
     }
+    function receiveMatch(event: Event) {
+      const live = (event as CustomEvent<unknown>).detail;
+      if (!isLiveMatchSummary(live)) return;
+      setProfile(previous => previous ? { ...previous, upcomingFixtures: previous.upcomingFixtures.map(fixture =>
+        fixture.id === live.matchId && isNewerLive(fixture.live, live) ? { ...fixture, live } : fixture) } : previous);
+    }
     load(true);
     window.addEventListener('football-bets:team-update', receiveTeamUpdate);
     window.addEventListener('football-bets:standings-update', receiveStandingsUpdate);
+    window.addEventListener('football-bets:match-summary', receiveMatch);
     return () => {
       current = false;
       window.removeEventListener('football-bets:team-update', receiveTeamUpdate);
       window.removeEventListener('football-bets:standings-update', receiveStandingsUpdate);
+      window.removeEventListener('football-bets:match-summary', receiveMatch);
     };
   }, [teamId]);
 
@@ -667,7 +678,7 @@ export function TeamProfilePage() {
         <MatchHistory teamId={profile.id} />
         <section>
           <p className="text-[10px] font-extrabold uppercase tracking-[.15em] text-pitch-700">Next matches</p>
-          <h2 className="mt-1 font-display text-xl font-bold text-ink">Upcoming fixtures</h2>
+          <h2 className="mt-1 font-display text-xl font-bold text-ink">Live & upcoming fixtures</h2>
           <div className="mt-3 space-y-2">
             {profile.upcomingFixtures.length
               ? profile.upcomingFixtures.map((fixture) => <FixtureRow fixture={fixture} key={fixture.id} />)

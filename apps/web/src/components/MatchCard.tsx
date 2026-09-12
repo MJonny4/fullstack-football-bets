@@ -9,11 +9,13 @@ import {
   selectionLabel,
   toNumber,
 } from '../lib/format';
-import type { Match, OddsQuote, PlaceBetInput } from '../types';
+import type { Bet, Match, OddsQuote, PlaceBetInput } from '../types';
 import { Alert, Icon, StatusPill } from './ui';
 import { TeamLink } from './TeamLink';
+import { LiveMatchCard } from './LiveMatchCard';
 
 interface MatchCardProps {
+  bets: Bet[];
   match: Match;
   balance: number;
   bettingClosed: boolean;
@@ -71,7 +73,7 @@ function groupQuotes(quotes: OddsQuote[]): MarketGroup[] {
   });
 }
 
-export function MatchCard({ match, balance, bettingClosed, ownTeamInvolved, onPlaceBet }: MatchCardProps) {
+export function MatchCard({ match, bets, balance, bettingClosed, ownTeamInvolved, onPlaceBet }: MatchCardProps) {
   const groups = useMemo(() => groupQuotes(match.odds ?? []), [match.odds]);
   const [activeMarket, setActiveMarket] = useState(groups[0]?.key ?? '');
   const [selected, setSelected] = useState<OddsQuote | null>(null);
@@ -87,6 +89,10 @@ export function MatchCard({ match, balance, bettingClosed, ownTeamInvolved, onPl
   const potentialReturn = selected && isValidStake ? Math.floor(stakeValue * toNumber(selected.odds)) : 0;
   const isResolved = match.status.toUpperCase() === 'RESOLVED';
   const matchResultQuotes = orderedMatchResultQuotes(currentGroup);
+
+  if (bettingClosed || isResolved || match.live || new Date(match.scheduledAt).getTime() <= Date.now()) {
+    return <LiveMatchCard match={match} bets={bets} />;
+  }
 
   function chooseMarket(key: string) {
     setActiveMarket(key);

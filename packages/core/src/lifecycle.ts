@@ -1,5 +1,5 @@
 import { type PrismaClient, Prisma } from "@prisma/client";
-import { createOddsQuotes } from "@fb/shared";
+import { createOddsQuotes, LIVE_ENGINE_VERSION } from "@fb/shared";
 import { DateTime } from "luxon";
 import { getRoundSchedule, type RandomSource } from "./schedule.js";
 import {
@@ -10,6 +10,8 @@ import {
 export const DEFAULT_TIMEZONE = "Europe/Madrid";
 export const DEFAULT_WEEKLY_TOPUP = 200;
 export const MATCH_KICKOFF_HOUR = 17;
+export const MATCH_SLOT_MINUTES = 15;
+export const ROUND_OPEN_HOUR = 9;
 
 export interface OpenRoundOptions {
   now?: Date;
@@ -18,6 +20,8 @@ export interface OpenRoundOptions {
   random?: RandomSource;
   /** Opens the next unused competition week, even if this local week is open. */
   force?: boolean;
+  /** Null preserves legacy result-model fixtures, for migration and legacy tests. */
+  simulationVersion?: typeof LIVE_ENGINE_VERSION | null;
 }
 
 export interface OpenRoundResult {
@@ -41,11 +45,43 @@ function assertValidDate(value: Date, label: string): void {
   if (Number.isNaN(value.getTime())) throw new RangeError(`${label} is invalid`);
 }
 
-function nextFridayClose(now: Date, timezone: string): DateTime {
+function localDateTime(now: Date, timezone: string): DateTime {
+  assertValidDate(now, "now");
   const localNow = DateTime.fromJSDate(now, { zone: timezone });
   if (!localNow.isValid) {
     throw new RangeError(`Invalid timezone ${timezone}`);
   }
+  return localNow;
+}
+
+/**
+ * Returns whether a worker restart should ensure this week's round exists.
+ * The scheduled Monday job remains the normal opener; this only defines the
+ * safe catch-up period after that job was missed.
+ */
+export function shouldRecoverCurrentRound(
+  now: Date,
+  timezone = DEFAULT_TIMEZONE,
+): boolean {
+  const localNow = localDateTime(now, timezone);
+  const startOfWeek = localNow.startOf("week");
+  const opensAt = startOfWeek.set({
+    hour: ROUND_OPEN_HOUR,
+    minute: 0,
+    second: 0,
+    millisecond: 0,
+  });
+  const closesAt = startOfWeek.plus({ days: 4 }).set({
+    hour: 23,
+    minute: 59,
+    second: 0,
+    millisecond: 0,
+  });
+  return localNow >= opensAt && localNow < closesAt;
+}
+
+function nextFridayClose(now: Date, timezone: string): DateTime {
+  const localNow = localDateTime(now, timezone);
   const startOfWeek = localNow.startOf("week");
   let close = startOfWeek.plus({ days: 4 }).set({
     hour: 23,
@@ -123,11 +159,12 @@ export async function openNextRound(
     });
 
     const matchIds: string[] = [];
+    const daySlots = { SAT: 0, SUN: 0 };
     for (const pairing of schedule) {
       const daysAfterClose = pairing.scheduledDay === "SAT" ? 1 : 2;
       const scheduledAt = bettingClosesAt.plus({ days: daysAfterClose }).set({
         hour: MATCH_KICKOFF_HOUR,
-        minute: 0,
+        minute: daySlots[pairing.scheduledDay]++ * MATCH_SLOT_MINUTES,
         second: 0,
         millisecond: 0,
       });
@@ -139,6 +176,7 @@ export async function openNextRound(
           scheduledDay: pairing.scheduledDay,
           scheduledAt: scheduledAt.toJSDate(),
           lineupLocksAt: scheduledAt.minus({ hours: 1 }).toJSDate(),
+          simulationVersion: options.simulationVersion === undefined ? LIVE_ENGINE_VERSION : options.simulationVersion,
         },
       });
       matchIds.push(match.id);

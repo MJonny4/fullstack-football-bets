@@ -1,9 +1,11 @@
 import { type PrismaClient, Prisma } from "@prisma/client";
 import { calculateLineupRatings, isFormation } from "@fb/shared";
+import { freezeSimulationTeam } from "./simulation-input.js";
 
 export interface LockDueLineupsOptions {
   now?: Date;
   force?: boolean;
+  matchId?: string;
 }
 
 export interface LockDueLineupsResult {
@@ -68,6 +70,17 @@ async function lockMatch(
           })),
         );
 
+        const simulationTeam = match.simulationVersion ? freezeSimulationTeam(
+          await tx.team.findUniqueOrThrow({ where: { id: teamId }, select: { id: true, name: true } }),
+          ratings.formation,
+          ratings.overall,
+          ratings.assignments.map(assignment => ({
+            player: lineup.slots.find(slot => slot.player.id === assignment.player.id)!.player,
+            slotKey: assignment.slotKey, unit: assignment.unit, adjustedRating: assignment.adjustedRating,
+          })),
+          await tx.player.findMany({ where: { teamId } }),
+        ) : null;
+
         await tx.matchLineupSnapshot.create({
           data: {
             matchId: match.id,
@@ -82,6 +95,7 @@ async function lockMatch(
             midfieldRating: new Prisma.Decimal(ratings.midfield),
             defenseRating: new Prisma.Decimal(ratings.defense),
             goalkeeperRating: new Prisma.Decimal(ratings.goalkeeper),
+            ...(simulationTeam ? { simulationTeam: simulationTeam as unknown as Prisma.InputJsonValue } : {}),
             slots: {
               create: ratings.assignments.map((assignment, sortOrder) => ({
                 playerId: assignment.player.id,
@@ -114,6 +128,7 @@ export async function lockDueMatchLineups(
   const candidates = await db.match.findMany({
     where: {
       status: "SCHEDULED",
+      ...(options.matchId ? { id: options.matchId } : {}),
       ...(force ? {} : { lineupLocksAt: { lte: now } }),
       OR: [
         { lineupSnapshots: { none: { side: "HOME" } } },

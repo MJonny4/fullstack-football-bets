@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { prisma } from "@fb/core";
+import { prisma, liveSummary, publicSimulationSelect } from "@fb/core";
 import { serializeTeam } from "../common/team-response.js";
 
 @Injectable()
@@ -11,6 +11,7 @@ export class RoundsService {
         matches: {
           orderBy: [{ scheduledAt: "asc" }, { id: "asc" }],
           include: {
+            simulation: { select: publicSimulationSelect },
             homeTeam: true,
             awayTeam: true,
             odds: {
@@ -35,6 +36,8 @@ export class RoundsService {
       ...round,
       matches: round.matches.map((match) => ({
         ...match,
+        simulation: undefined,
+        live: match.simulation ? liveSummary(match.simulation, match.status === "RESOLVED") : null,
         homeTeam: serializeTeam(match.homeTeam),
         awayTeam: serializeTeam(match.awayTeam),
         odds: match.odds.map((quote) => ({

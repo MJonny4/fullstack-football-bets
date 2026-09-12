@@ -12,6 +12,7 @@ import { RoundsModule } from "./rounds/rounds.module.js";
 import { StandingsModule } from "./standings/standings.module.js";
 import { TeamsModule } from "./teams/teams.module.js";
 import { UsersModule } from "./users/users.module.js";
+import { MatchesController } from "./matches/matches.controller.js";
 
 @Module({
   imports: [
@@ -31,7 +32,7 @@ import { UsersModule } from "./users/users.module.js";
     TeamsModule,
     DevModule,
   ],
-  controllers: [HealthController],
+  controllers: [HealthController, MatchesController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

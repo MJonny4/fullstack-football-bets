@@ -7,6 +7,11 @@ export * from "./result-engine.js";
 export * from "./lifecycle.js";
 export * from "./lineup-lock.js";
 export * from "./settlement.js";
+export * from "./simulation-engine.js";
+export * from "./simulation-input.js";
+export * from "./live-simulation.js";
+export * from "./snapshot-cache.js";
+export { LIVE_DATA_CHANNEL, LIVE_AUDIENCE_KEY } from "@fb/shared";
 
 export {
   Prisma,

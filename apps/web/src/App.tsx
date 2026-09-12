@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router';
-import { io } from 'socket.io-client';
+import { isLiveMatchSummary, isNewerLive } from '@fb/shared';
+import { getLiveSocket } from './lib/live';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { AuthScreen } from './components/AuthScreen';
 import { AccountMenu } from './components/AccountMenu';
@@ -8,6 +9,7 @@ import { BetsPage } from './components/BetsPage';
 import { LeaderboardPage } from './components/LeaderboardPage';
 import { LeagueTablePage } from './components/LeagueTablePage';
 import { MatchesPage } from './components/MatchesPage';
+import { MatchCenterPage } from './components/MatchCenterPage';
 import { ProfilePage } from './components/ProfilePage';
 import { PublicManagerProfilePage } from './components/PublicManagerProfilePage';
 import { TeamPage } from './components/TeamPage';
@@ -66,6 +68,8 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [socketConnected, setSocketConnected] = useState(false);
+  const latestRound = useRef(round);
+  latestRound.current = round;
   const managedTeamId = teams.find((team) => team.isMine)?.id ?? user?.dtAssignment?.teamId ?? null;
 
   const loadDashboard = useCallback(async () => {
@@ -100,10 +104,9 @@ function Dashboard() {
     const userId = user?.id;
     if (!userId) return;
 
-    const socket = io({
-      path: '/socket.io',
-      withCredentials: true,
-    });
+    const socket = getLiveSocket();
+    let mounted = true;
+    let refreshing = false;
 
     function receiveLeaderboard(payload: unknown) {
       if (!Array.isArray(payload)) return;
@@ -120,8 +123,44 @@ function Dashboard() {
     }
 
     function receiveRound(payload: unknown) {
-      if (isRound(payload)) setRound(payload);
+      if (isRound(payload)) setRound(previous => ({ ...payload, matches: payload.matches.map(match => {
+        const existing = previous?.matches.find(m => m.id === match.id);
+        if (existing?.live && (!match.live || !isNewerLive(existing.live, match.live))) {
+          return { ...match, live: existing.live, status: existing.status === 'RESOLVED' ? existing.status : match.status };
+        }
+        return match;
+      }) }));
     }
+
+    function receiveMatch(payload: unknown) {
+      if (!isLiveMatchSummary(payload)) return;
+      setRound(previous => previous ? { ...previous, matches: previous.matches.map(match =>
+        match.id === payload.matchId && isNewerLive(match.live, payload) ? { ...match, live: payload } : match) } : previous);
+      setBets(previous => previous.map(bet => bet.match.id === payload.matchId && isNewerLive(bet.match.live, payload)
+        ? { ...bet, match: { ...bet.match, live: payload } } : bet));
+      window.dispatchEvent(new CustomEvent('football-bets:match-summary', { detail: payload }));
+    }
+    function finished() { void api.bets().then(value => { if (mounted) setBets(value); }).catch(() => undefined); }
+    async function reconcile() {
+      if (refreshing || document.hidden) return;
+      refreshing = true;
+      try {
+        const [nextRound, nextBets] = await Promise.all([api.currentRound(), api.bets()]);
+        // If a settlement broadcast was missed, also repair the tables and wallet.
+        // Avoid these heavier reads while a healthy socket has current results.
+        const settlement = (value: Round | null) => value?.matches.map(match => `${match.id}:${match.status}:${match.live?.settled ?? false}`).join('|');
+        const tablesChanged = settlement(nextRound) !== settlement(latestRound.current);
+        if (mounted) { if (nextRound) receiveRound(nextRound); setBets(nextBets); }
+        if (mounted && (!socket.connected || tablesChanged)) {
+          const [nextStandings, nextLeaderboard] = await Promise.all([api.standings(), api.leaderboard()]);
+          if (mounted) { receiveStandings(nextStandings); receiveLeaderboard(nextLeaderboard); }
+        }
+      } catch { /* A transient connection failure leaves the last confirmed state visible. */ }
+      finally { refreshing = false; }
+    }
+    function visible() { if (!document.hidden) void reconcile(); }
+    function connect() { setSocketConnected(true); finished(); }
+    function disconnect() { setSocketConnected(false); }
 
     function receiveTeam(payload: unknown) {
       if (!payload || typeof payload !== 'object' || typeof (payload as { teamId?: unknown }).teamId !== 'string') return;
@@ -129,19 +168,32 @@ function Dashboard() {
       window.dispatchEvent(new CustomEvent('football-bets:team-update', { detail: payload }));
     }
 
-    socket.on('connect', () => setSocketConnected(true));
-    socket.on('disconnect', () => setSocketConnected(false));
-    socket.on('connect_error', () => setSocketConnected(false));
+    socket.on('connect', connect);
+    socket.on('disconnect', disconnect);
+    socket.on('connect_error', disconnect);
     socket.on('leaderboard:update', receiveLeaderboard);
     socket.on('standings:update', receiveStandings);
     socket.on('round:update', receiveRound);
     socket.on('team:update', receiveTeam);
+    socket.on('match:summary', receiveMatch);
+    socket.on('match:finished', finished);
+    socket.connect();
+    document.addEventListener('visibilitychange', visible);
+    const reconcileTimer = window.setInterval(() => {
+      if (!socket.connected || latestRound.current?.status !== 'OPEN') void reconcile();
+    }, 15_000);
 
     return () => {
+      mounted = false;
+      window.clearInterval(reconcileTimer);
+      document.removeEventListener('visibilitychange', visible);
       socket.off('leaderboard:update', receiveLeaderboard);
       socket.off('standings:update', receiveStandings);
       socket.off('round:update', receiveRound);
       socket.off('team:update', receiveTeam);
+      socket.off('match:summary', receiveMatch);
+      socket.off('match:finished', finished);
+      socket.off('connect', connect); socket.off('disconnect', disconnect); socket.off('connect_error', disconnect);
       socket.disconnect();
     };
   }, [updateBalance, user?.id]);
@@ -258,7 +310,8 @@ function Dashboard() {
           <>
             <Routes>
               <Route path="/" element={<Navigate replace to="/matches" />} />
-              <Route path="/matches" element={<MatchesPage balance={toNumber(user.coinBalance)} managedTeamId={managedTeamId} onPlaceBet={placeBet} round={round} />} />
+              <Route path="/matches" element={<MatchesPage bets={bets} balance={toNumber(user.coinBalance)} managedTeamId={managedTeamId} onPlaceBet={placeBet} round={round} />} />
+              <Route path="/matches/:matchId/live" element={<MatchCenterPage key={location.pathname} bets={bets} round={round} />} />
               <Route path="/standings" element={<LeagueTablePage standings={standings} user={user} />} />
               <Route path="/bets" element={<BetsPage bets={bets} onBrowse={() => navigate('/matches')} onCancel={cancelBet} round={round} />} />
               <Route path="/leaderboard" element={<LeaderboardPage connected={socketConnected} entries={leaderboard} user={user} />} />

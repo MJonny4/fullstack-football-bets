@@ -5,9 +5,11 @@ import {
   type MatchContext,
   type MatchResultPayload,
   type ResultEngine,
+  type SimulationState,
 } from "@fb/shared";
 import { MatchNotFoundError } from "./errors.js";
 import { lockDueMatchLineups } from "./lineup-lock.js";
+import { simulationResult } from "./simulation-engine.js";
 import {
   applyWalletTransaction,
   type BalanceChange,
@@ -35,7 +37,8 @@ export interface ResolveDueResult {
 }
 
 function assertResultPayload(result: MatchResultPayload): void {
-  for (const [field, value] of Object.entries(result)) {
+  for (const field of ["homeScore", "awayScore", "homeCards", "awayCards", "homeCorners", "awayCorners"] as const) {
+    const value = result[field];
     if (!Number.isSafeInteger(value) || value < 0) {
       throw new RangeError(`Result field ${field} must be a non-negative integer`);
     }
@@ -71,6 +74,9 @@ export async function resolveAndSettleMatch(
       balanceChanges: [],
     };
   }
+  if (candidate.simulationVersion) {
+    throw new Error("Live matches must reach full time before settlement");
+  }
 
   const homeSnapshot = candidate.lineupSnapshots.find(
     ({ side }) => side === "HOME",
@@ -103,7 +109,32 @@ export async function resolveAndSettleMatch(
   const result = await engine.resolve(context);
   assertResultPayload(result);
 
+  return settleResult(db, matchId, candidate.roundId, result);
+}
+
+/** Only a committed full-time checkpoint can enter the wallet transaction. */
+export async function settleLiveMatch(db: PrismaClient, matchId: string): Promise<SettlementResult> {
+  const match = await db.match.findUnique({ where: { id: matchId }, include: { simulation: true } });
+  if (!match) throw new MatchNotFoundError(matchId);
+  if (!match.simulationVersion || !match.simulation || match.simulation.phase !== "FINISHED" || !match.simulation.finalPayload) {
+    throw new Error("Live matches must reach full time before settlement");
+  }
+  const result = simulationResult(match.simulation.state as unknown as SimulationState);
+  const stored = match.simulation.finalPayload as unknown as MatchResultPayload;
+  assertResultPayload(stored);
+  for (const key of Object.keys(result) as Array<keyof MatchResultPayload>) {
+    if (result[key] !== stored[key]) throw new Error("Full-time result differs from committed match state");
+  }
+  return settleResult(db, matchId, match.roundId, stored, match.simulation.revision);
+}
+
+async function settleResult(db: PrismaClient, matchId: string, roundId: string,
+  result: MatchResultPayload, liveRevision?: number): Promise<SettlementResult> {
+
   return db.$transaction(async (tx) => {
+    // Serializing the short finalization transactions within a round makes the
+    // final unresolved count correct when two matches finish concurrently.
+    await tx.$queryRaw`SELECT "id" FROM "Round" WHERE "id" = ${roundId} FOR UPDATE`;
     // This conditional write is the match-level idempotency claim. Concurrent
     // workers may simulate, but only one can grade or credit within its tx.
     const claim = await tx.match.updateMany({
@@ -118,7 +149,7 @@ export async function resolveAndSettleMatch(
       return {
         settled: false,
         matchId,
-        roundId: candidate.roundId,
+        roundId,
         roundSettled: false,
         result: null,
         gradedBetCount: 0,
@@ -156,21 +187,24 @@ export async function resolveAndSettleMatch(
     }
 
     const unresolvedMatches = await tx.match.count({
-      where: { roundId: candidate.roundId, status: "SCHEDULED" },
+      where: { roundId, status: "SCHEDULED" },
     });
     let roundSettled = false;
     if (unresolvedMatches === 0) {
       const update = await tx.round.updateMany({
-        where: { id: candidate.roundId, status: { not: "SETTLED" } },
+        where: { id: roundId, status: { not: "SETTLED" } },
         data: { status: "SETTLED" },
       });
       roundSettled = update.count === 1;
     }
 
+    if (liveRevision !== undefined) {
+      await tx.matchLiveOutbox.create({ data: { matchId, revision: liveRevision, settled: true } });
+    }
     return {
       settled: true,
       matchId,
-      roundId: candidate.roundId,
+      roundId,
       roundSettled,
       result,
       gradedBetCount,
@@ -191,6 +225,7 @@ export async function resolveDueMatches(
   const dueMatches = await db.match.findMany({
     where: {
       status: "SCHEDULED",
+      simulationVersion: null,
       ...(options.force ? {} : { scheduledAt: { lte: now } }),
     },
     select: { id: true },

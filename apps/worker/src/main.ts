@@ -5,7 +5,12 @@ import {
   openNextRound,
   prisma,
   resolveDueMatches,
+  shouldRecoverCurrentRound,
   WeightedRandomResultEngine,
+  progressLiveMatches,
+  flushMatchOutbox,
+  LIVE_DATA_CHANNEL,
+  LIVE_AUDIENCE_KEY,
 } from "@fb/core";
 import { Job, Queue, Worker } from "bullmq";
 import { rmSync, writeFileSync } from "node:fs";
@@ -42,13 +47,24 @@ const engine = new WeightedRandomResultEngine();
 
 function createRedis(role: string): Redis {
   const connection = new Redis(config.redisUrl, {
-    maxRetriesPerRequest: null,
+    ...(role === "publisher" ? { maxRetriesPerRequest: 1, enableOfflineQueue: false, commandTimeout: 1000 }
+      : { maxRetriesPerRequest: null }),
     enableReadyCheck: true,
   });
   connection.on("error", (error) => {
     console.error(`[worker:${role}] Redis error`, error);
   });
   return connection;
+}
+
+async function watchedMatchIds(): Promise<Set<string> | undefined> {
+  try {
+    const leases = await publisher.zrangebyscore(LIVE_AUDIENCE_KEY, Date.now(), "+inf");
+    return new Set(leases.map(member => member.slice(member.lastIndexOf(":") + 1)));
+  } catch {
+    // Viewer telemetry is an optimization, never a prerequisite for kickoff.
+    return undefined;
+  }
 }
 
 async function publishLiveDataChange(
@@ -73,6 +89,12 @@ async function publishLiveDataChange(
 async function processJob(job: Job): Promise<unknown> {
   const now = new Date();
   switch (job.name as LifecycleJobName) {
+    case JOB_NAMES.LIVE_TICK: {
+      const result = await progressLiveMatches(prisma, now, { watchedMatchIds: await watchedMatchIds() });
+      for (const error of result.errors) console.error(`[worker:live] ${error.matchId}: ${error.message}`);
+      await flushMatchOutbox(prisma, message => publisher.publish(LIVE_DATA_CHANNEL, JSON.stringify(message)));
+      return { advanced: result.advanced.length, settled: result.settlements.length };
+    }
     case JOB_NAMES.OPEN_ROUND: {
       const result = await openNextRound(prisma, {
         now,
@@ -108,14 +130,25 @@ async function processJob(job: Job): Promise<unknown> {
     case JOB_NAMES.RECOVER: {
       const closed = await closeBettingWindows(prisma, { now });
       const resolved = await resolveDueMatches(prisma, engine, { now });
+      const live = await progressLiveMatches(prisma, now, { watchedMatchIds: await watchedMatchIds() });
+      for (const error of live.errors) console.error(`[worker:recovery] ${error.matchId}: ${error.message}`);
+      await flushMatchOutbox(prisma, message => publisher.publish(LIVE_DATA_CHANNEL, JSON.stringify(message)));
+      const opened = shouldRecoverCurrentRound(now, config.timezone)
+        ? await openNextRound(prisma, {
+            now,
+            timezone: config.timezone,
+            topupAmount: config.topupAmount,
+          })
+        : null;
       await publishLiveDataChange(
-        resolved.balanceChanges,
+        [...resolved.balanceChanges, ...(opened?.balanceChanges ?? [])],
         JOB_NAMES.RECOVER,
         closed.closedRoundIds.length > 0 ||
           resolved.lockedMatchIds.length > 0 ||
-          resolved.matches.some(({ settled }) => settled),
+          resolved.matches.some(({ settled }) => settled) ||
+          opened?.created === true,
       );
-      return { closed, resolved };
+      return { closed, resolved, opened, live };
     }
     default:
       throw new Error(`Unknown lifecycle job: ${job.name}`);
@@ -128,6 +161,7 @@ const worker = new Worker(LIFECYCLE_QUEUE, processJob, {
 });
 
 worker.on("completed", (job) => {
+  if (job.name === JOB_NAMES.LIVE_TICK) return;
   console.info(`[worker] completed ${job.name} (${job.id ?? "no-id"})`);
 });
 worker.on("failed", (job, error) => {
@@ -159,6 +193,11 @@ async function registerSchedules(): Promise<void> {
       ),
     ),
   );
+
+  await queue.upsertJobScheduler("live-match-clock", { every: 1_000 }, {
+    name: JOB_NAMES.LIVE_TICK, data: {},
+    opts: { attempts: 3, backoff: { type: "exponential", delay: 1_000 }, removeOnComplete: 20, removeOnFail: 50 },
+  });
 
   await queue.add(
     JOB_NAMES.RECOVER,

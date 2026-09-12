@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
+import { formatMatchClock } from '@fb/shared';
 import { useCountdown } from '../hooks/useCountdown';
 import { readableError } from '../lib/api';
 import { formatCoins, formatDate, formatOdds, marketLabel, resultScore, selectionLabel, toNumber } from '../lib/format';
@@ -65,6 +67,8 @@ export function BetsPage({
           const won = bet.status.toUpperCase() === 'WON';
           const cancelled = bet.status.toUpperCase() === 'CANCELLED';
           const canCancel = bet.status.toUpperCase() === 'PENDING'
+            && !bet.match.live && bet.match.status === 'SCHEDULED'
+            && new Date(bet.match.scheduledAt).getTime() > Date.now()
             && bet.match.round?.id === round?.id
             && round?.status === 'OPEN'
             && !cancellationCountdown.isElapsed;
@@ -80,9 +84,10 @@ export function BetsPage({
                         <TeamLink compact team={bet.match.awayTeam} />
                       </div>
                       <div className="mt-1 text-xs font-semibold text-slate-400">
-                        {score ? `FT ${score}` : formatDate(bet.match.scheduledAt)}
+                        {bet.match.live ? `${formatMatchClock(bet.match.live.second, bet.match.live.period, bet.match.live.phase)} ${bet.match.live.homeScore}–${bet.match.live.awayScore}` : score ? `FT ${score}` : formatDate(bet.match.scheduledAt)}
                         {bet.match.round?.weekNumber ? ` · Week ${bet.match.round.weekNumber}` : ''}
                       </div>
+                      <Link to={`/matches/${bet.match.id}/live`} className="mt-2 inline-block text-[11px] font-bold text-pitch-700 hover:underline">{bet.match.live && bet.match.live.phase !== 'FINISHED' ? 'Watch the match →' : 'Match center →'}</Link>
                     </div>
                   </div>
 

@@ -1,9 +1,14 @@
-import { Controller, Inject, Post } from "@nestjs/common";
+import { Controller, Inject, Param, Post } from "@nestjs/common";
 import { DevService } from "./dev.service.js";
 
 @Controller("dev")
 export class DevController {
   constructor(@Inject(DevService) private readonly dev: DevService) {}
+
+  @Post("matches/:id/kickoff")
+  kickoff(@Param("id") id: string) {
+    return this.dev.kickoff(id);
+  }
 
   @Post("open-round")
   openRound() {

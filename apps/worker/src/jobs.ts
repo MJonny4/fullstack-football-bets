@@ -7,6 +7,7 @@ export const JOB_NAMES = {
   CLOSE_WINDOWS: "round.close-expired",
   RESOLVE_DUE: "match.resolve-due",
   RECOVER: "lifecycle.recover",
+  LIVE_TICK: "match.live-tick",
 } as const;
 
 export type LifecycleJobName = (typeof JOB_NAMES)[keyof typeof JOB_NAMES];
