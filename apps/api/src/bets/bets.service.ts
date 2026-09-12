@@ -10,6 +10,8 @@ import {
   Prisma,
   applyWalletTransaction,
   prisma,
+  liveSummary,
+  publicSimulationSelect,
 } from "@fb/core";
 import { validateSelection } from "@fb/shared";
 import { LeaderboardGateway } from "../leaderboard/leaderboard.gateway.js";
@@ -34,6 +36,7 @@ export class BetsService {
             homeTeam: true,
             awayTeam: true,
             round: true,
+            simulation: { select: publicSimulationSelect },
           },
         },
       },
@@ -44,6 +47,8 @@ export class BetsService {
       oddsTaken: Number(bet.oddsTaken),
       match: {
         ...bet.match,
+        simulation: undefined,
+        live: bet.match.simulation ? liveSummary(bet.match.simulation, bet.match.status === "RESOLVED") : null,
         homeTeam: serializeTeam(bet.match.homeTeam),
         awayTeam: serializeTeam(bet.match.awayTeam),
       },
@@ -103,6 +108,7 @@ export class BetsService {
           where: { id: input.matchId },
           include: {
             round: true,
+            simulation: { select: { matchId: true } },
             odds: {
               where: {
                 market: input.market,
@@ -119,7 +125,8 @@ export class BetsService {
         }
 
         const now = new Date();
-        if (match.round.status !== "OPEN" || now >= match.round.bettingClosesAt) {
+        if (match.round.status !== "OPEN" || now >= match.round.bettingClosesAt
+          || match.status !== "SCHEDULED" || match.simulation || now >= match.scheduledAt) {
           throw new ConflictException("The betting window is closed");
         }
         const assignment = await tx.dTAssignment.findUnique({
@@ -177,7 +184,7 @@ export class BetsService {
       async (tx) => {
         const bet = await tx.bet.findFirst({
           where: { id: betId, userId },
-          include: { match: { include: { round: true } } },
+          include: { match: { include: { round: true, simulation: { select: { matchId: true } } } } },
         });
         if (!bet) throw new NotFoundException("Bet not found");
         if (bet.status !== "PENDING") {
@@ -191,7 +198,8 @@ export class BetsService {
         const now = new Date();
         if (
           bet.match.round.status !== "OPEN" ||
-          now >= bet.match.round.bettingClosesAt
+          now >= bet.match.round.bettingClosesAt || bet.match.status !== "SCHEDULED"
+          || bet.match.simulation || now >= bet.match.scheduledAt
         ) {
           throw new ConflictException(
             "The cancellation window closed with betting on Friday night",

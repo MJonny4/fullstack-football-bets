@@ -99,6 +99,8 @@ export interface Match {
   awayTeam: Team;
   odds: OddsQuote[];
   resultPayload?: MatchResult | null;
+  simulationVersion?: string | null;
+  live?: import('@fb/shared').LiveMatchSummary | null;
 }
 
 export interface Round {

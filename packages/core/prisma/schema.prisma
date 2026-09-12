@@ -18,6 +18,13 @@ enum MatchStatus {
   RESOLVED
 }
 
+enum SimulationPhase {
+  PENDING
+  LIVE
+  HALFTIME
+  FINISHED
+}
+
 enum ScheduledDay {
   SAT
   SUN
@@ -268,12 +275,16 @@ model Match {
   status          MatchStatus           @default(SCHEDULED)
   resultPayload   Json?
   resolvedAt      DateTime?
+  simulationVersion String?
   round           Round                 @relation(fields: [roundId], references: [id], onDelete: Cascade)
   homeTeam        Team                  @relation("HomeTeam", fields: [homeTeamId], references: [id], onDelete: Restrict)
   awayTeam        Team                  @relation("AwayTeam", fields: [awayTeamId], references: [id], onDelete: Restrict)
   odds            OddsSnapshot[]
   bets            Bet[]
   lineupSnapshots MatchLineupSnapshot[]
+  simulation      MatchSimulation?
+  events          MatchEvent[]
+  liveOutbox      MatchLiveOutbox[]
 
   @@unique([roundId, homeTeamId, awayTeamId])
   @@index([roundId, status])
@@ -295,6 +306,7 @@ model MatchLineupSnapshot {
   midfieldRating   Decimal                   @db.Decimal(5, 2)
   defenseRating    Decimal                   @db.Decimal(5, 2)
   goalkeeperRating Decimal                   @db.Decimal(5, 2)
+  simulationTeam   Json?
   match            Match                     @relation(fields: [matchId], references: [id], onDelete: Cascade)
   team             Team                      @relation(fields: [teamId], references: [id], onDelete: Restrict)
   sourceLineup     TeamLineup                @relation(fields: [sourceLineupId], references: [id], onDelete: Restrict)
@@ -302,6 +314,50 @@ model MatchLineupSnapshot {
 
   @@unique([matchId, side])
   @@index([teamId, lockedAt(sort: Desc)])
+}
+
+model MatchSimulation {
+  matchId       String          @id
+  version       String
+  seed          String
+  input         Json
+  state         Json
+  phase         SimulationPhase @default(PENDING)
+  step          Int             @default(0)
+  revision      Int             @default(0)
+  lastSequence  Int             @default(0)
+  startedAt     DateTime
+  updatedAt     DateTime         @default(now())
+  finishedAt    DateTime?
+  finalPayload  Json?
+  match         Match           @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([phase, updatedAt])
+}
+
+model MatchEvent {
+  id        String   @id @default(cuid())
+  matchId   String
+  sequence  Int
+  step      Int
+  payload   Json
+  createdAt DateTime @default(now())
+  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, sequence])
+}
+
+model MatchLiveOutbox {
+  id          String   @id @default(cuid())
+  matchId     String
+  revision    Int
+  settled     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  deliveredAt DateTime?
+  match       Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, revision, settled])
+  @@index([deliveredAt, createdAt])
 }
 
 model MatchLineupSnapshotSlot {

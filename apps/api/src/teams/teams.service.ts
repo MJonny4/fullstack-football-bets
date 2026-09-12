@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { Prisma, prisma, type Player } from "@fb/core";
+import { Prisma, prisma, liveSummary, publicSimulationSelect, type Player } from "@fb/core";
 import {
   PLAYER_POSITIONS,
   calculateLineupRatings,
@@ -61,6 +61,8 @@ interface StoredFixture {
   lineupLocksAt: Date;
   status: "SCHEDULED" | "RESOLVED";
   resultPayload: unknown;
+  simulation?: Parameters<typeof liveSummary>[0] | null;
+  simulationVersion?: string | null;
   round: { weekNumber: number };
   homeTeam: {
     id: string;
@@ -250,10 +252,13 @@ function toFixture(match: StoredFixture): PublicTeamFixtureDto {
       strengthRating: Number(match.awayTeam.strengthRating),
     },
     result: readResult(match.resultPayload),
+    live: match.simulation ? liveSummary(match.simulation, match.status === "RESOLVED") : null,
+    supportsLive: Boolean(match.simulationVersion),
   };
 }
 
 const fixtureInclude = {
+  simulation: { select: publicSimulationSelect },
   round: { select: { weekNumber: true } },
   homeTeam: {
     select: {
@@ -760,6 +765,8 @@ export class TeamsService {
     const openMatches = await tx.match.findMany({
       where: {
         status: "SCHEDULED",
+        simulation: { is: null },
+        scheduledAt: { gt: publishedAt },
         OR: [
           { homeTeamId: assignment.teamId },
           { awayTeamId: assignment.teamId },

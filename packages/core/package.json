@@ -23,7 +23,7 @@
   ],
   "scripts": {
     "build": "prisma generate && tsc -p tsconfig.json && tsc -p prisma/tsconfig.json",
-    "typecheck": "prisma generate && tsc -p tsconfig.json --noEmit && tsc -p prisma/tsconfig.json",
+    "typecheck": "prisma generate && tsc -p tsconfig.json --noEmit && tsc -p prisma/tsconfig.json && tsc -p tsconfig.calibration.json",
     "test": "vitest run",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",

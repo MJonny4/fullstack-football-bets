@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+.live-player, .live-ball { will-change: transform; }
+.live-moment { animation: match-moment 350ms ease-out both; }
+@keyframes match-moment { from { opacity: 0; transform: translateY(12px) scale(.94); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .live-player, .live-ball { transition: none; }
+  .live-moment { animation: none; }
+}
+
 @layer base {
   :root {
     color: #10211a;

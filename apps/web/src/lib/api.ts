@@ -17,6 +17,7 @@ import type {
   TeamProfile,
   User,
 } from '../types';
+import type { MatchCenterDto, LiveEvent } from '@fb/shared';
 
 export class ApiError extends Error {
   readonly status: number;
@@ -71,6 +72,14 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
+  matchCenter(matchId: string) {
+    return request<MatchCenterDto>(`/api/matches/${encodeURIComponent(matchId)}/live`);
+  },
+
+  matchEvents(matchId: string, afterSequence = 0) {
+    return request<{ events: LiveEvent[]; nextSequence: number | null }>(`/api/matches/${encodeURIComponent(matchId)}/events?afterSequence=${afterSequence}`);
+  },
+
   signup(input: { email: string; password: string; username: string; displayName: string }) {
     return request<AuthResponse>('/api/auth/signup', {
       method: 'POST',

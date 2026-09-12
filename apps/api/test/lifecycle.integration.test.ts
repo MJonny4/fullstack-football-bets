@@ -8,14 +8,21 @@ import {
   type GeneratedPlayer,
   type MatchContext,
   type ResultEngine,
+  LIVE_ENGINE_VERSION,
+  gradeBet,
+  type SimulationInput,
+  type SimulationState,
+  type LiveEvent,
 } from "@fb/shared";
-import { lockDueMatchLineups, prisma, resolveAndSettleMatch } from "@fb/core";
+import { lockDueMatchLineups, prisma, resolveAndSettleMatch, openNextRound, initializeLiveMatch,
+  advanceLiveMatch, settleLiveMatch, readMatchCenter, flushMatchOutbox, stepSimulation,
+  simulationResult, progressLiveMatches } from "@fb/core";
 import request from "supertest";
 import sharp from "sharp";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { AppModule } from "../src/app.module.js";
 import { configureApp } from "../src/configure-app.js";
-import { RESULT_ENGINE } from "../src/dev/result-engine.provider.js";
+import { RESULT_ENGINE, MATCH_SIMULATION_VERSION } from "../src/dev/result-engine.provider.js";
 import { MailService } from "../src/mail/mail.service.js";
 
 const sentMail: Array<{ to: string; subject: string; text: string; html: string }> = [];
@@ -121,6 +128,8 @@ describe("Slice 1 HTTP lifecycle", () => {
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(RESULT_ENGINE)
       .useValue(new HomeWinEngine())
+      .overrideProvider(MATCH_SIMULATION_VERSION)
+      .useValue(null)
       .overrideProvider(MailService)
       .useValue({
         send: async (message: { to: string; subject: string; text: string; html: string }) => {
@@ -173,6 +182,221 @@ describe("Slice 1 HTTP lifecycle", () => {
   afterAll(async () => {
     await app?.close();
     await prisma.$disconnect();
+  });
+
+  async function prepareLiveFixture() {
+    const opened = await openNextRound(prisma, { force: true });
+    const match = await prisma.match.findUniqueOrThrow({ where: { id: opened.matchIds[0] } });
+    await addGeneratedSquad(match.homeTeamId);
+    await addGeneratedSquad(match.awayTeamId);
+    return match;
+  }
+
+  it("disables every developer lifecycle action without touching the league", async () => {
+    const match = await prepareLiveFixture();
+    const before = {
+      rounds: await prisma.round.findMany(), matches: await prisma.match.findMany(),
+      ledger: await prisma.ledgerEntry.count(), simulations: await prisma.matchSimulation.count(),
+    };
+    const previous = process.env.DEV_TOOLS;
+    process.env.DEV_TOOLS = "false";
+    try {
+      for (const path of ["open-round", "close-window", "resolve-due", `matches/${match.id}/kickoff`]) {
+        await request(app.getHttpServer()).post(`/api/dev/${path}`).expect(404);
+      }
+      expect(await prisma.round.findMany()).toEqual(before.rounds);
+      expect(await prisma.match.findMany()).toEqual(before.matches);
+      expect(await prisma.ledgerEntry.count()).toBe(before.ledger);
+      expect(await prisma.matchSimulation.count()).toBe(before.simulations);
+    } finally {
+      if (previous === undefined) delete process.env.DEV_TOOLS;
+      else process.env.DEV_TOOLS = previous;
+    }
+  });
+
+  it("staggers new live fixtures and preserves local kickoff and lineup deadlines across DST", async () => {
+    for (const [now, utcHour] of [["2026-09-14T10:00:00Z", 15], ["2026-10-26T10:00:00Z", 16]] as const) {
+      const opened = await openNextRound(prisma, { now: new Date(now), force: true });
+      const fixtures = await prisma.match.findMany({ where: { roundId: opened.roundId }, orderBy: { scheduledAt: "asc" } });
+      expect(fixtures).toHaveLength(10);
+      for (const day of ["SAT", "SUN"]) {
+        const daily = fixtures.filter(m => m.scheduledDay === day);
+        expect(daily.map(m => m.scheduledAt.getUTCMinutes())).toEqual([0, 15, 30, 45, 0]);
+        expect(daily.map(m => m.scheduledAt.getUTCHours())).toEqual([utcHour, utcHour, utcHour, utcHour, utcHour + 1]);
+        expect(daily.slice(1).every((m, i) => m.scheduledAt.getTime() - daily[i]!.scheduledAt.getTime() === 900_000)).toBe(true);
+        expect(daily.every(m => m.scheduledAt.getTime() - m.lineupLocksAt.getTime() === 3_600_000)).toBe(true);
+        expect(daily.every(m => m.simulationVersion === LIVE_ENGINE_VERSION)).toBe(true);
+      }
+    }
+  });
+
+  it("freezes the bench and all skills, resumes deterministically, and exposes only public live state", async () => {
+    const match = await prepareLiveFixture();
+    await prisma.round.update({ where: { id: match.roundId }, data: { status: "CLOSED" } });
+    const now = new Date();
+    await Promise.all([initializeLiveMatch(prisma, match.id, now, true), initializeLiveMatch(prisma, match.id, now, true)]);
+    let checkpoint = await prisma.matchSimulation.findUniqueOrThrow({ where: { matchId: match.id } });
+    const input = checkpoint.input as unknown as SimulationInput;
+    expect(input.home.players).toHaveLength(18);
+    expect(input.home.players.filter(p => p.slotKey === null)).toHaveLength(7);
+    const frozenShooting = input.home.players.find(p => p.position === "ST")!;
+    await prisma.player.update({ where: { id: frozenShooting.id }, data: { shooting: 1 } });
+    await expect(resolveAndSettleMatch(prisma, match.id, new HomeWinEngine())).rejects.toThrow("full time");
+    await expect(settleLiveMatch(prisma, match.id)).rejects.toThrow("full time");
+    const tickAt = new Date(now.getTime() + 2000);
+    const claims = await Promise.all([advanceLiveMatch(prisma, match.id, tickAt), advanceLiveMatch(prisma, match.id, tickAt)]);
+    expect(claims.filter(Boolean)).toHaveLength(1);
+    checkpoint = await prisma.matchSimulation.findUniqueOrThrow({ where: { matchId: match.id } });
+    expect(checkpoint.input).toEqual(input);
+    let expected = checkpoint.state as unknown as SimulationState;
+    while (expected.phase !== "FINISHED") expected = stepSimulation(input, expected).state;
+    await advanceLiveMatch(prisma, match.id, new Date(now.getTime() + 600_000), 2000);
+    checkpoint = await prisma.matchSimulation.findUniqueOrThrow({ where: { matchId: match.id } });
+    expect(checkpoint.state).toEqual(expected);
+    expect(checkpoint.finalPayload).toEqual(simulationResult(expected));
+    expect((await prisma.match.findUniqueOrThrow({ where: { id: match.id } })).resultPayload).toBeNull();
+    const center = await request(app.getHttpServer()).get(`/api/matches/${match.id}/live`).expect(200);
+    expect(center.body.live.phase).toBe("FINISHED");
+    expect(center.body.live.settled).toBe(false);
+    expect(JSON.stringify(center.body)).not.toMatch(/randomState|simulationTeam|"seed"|"input"|passwordHash|"attributes"/);
+    expect(JSON.stringify(center.body)).not.toContain(checkpoint.seed);
+    const round = await request(app.getHttpServer()).get("/api/rounds/current").expect(200);
+    expect(JSON.stringify(round.body)).not.toContain(checkpoint.seed);
+    let after: number | null = 0;
+    const events: LiveEvent[] = [];
+    while (after !== null) {
+      const page: request.Response = await request(app.getHttpServer()).get(`/api/matches/${match.id}/events?afterSequence=${after}`).expect(200);
+      events.push(...page.body.events); after = page.body.nextSequence;
+    }
+    expect(events.map(e => e.sequence)).toEqual(Array.from({ length: checkpoint.lastSequence }, (_, i) => i + 1));
+    expect(events.at(-1)?.type).toBe("FULL_TIME");
+    await request(app.getHttpServer()).get(`/api/matches/${match.id}/events?afterSequence=-1`).expect(400);
+  });
+
+  it("starts automatically without viewers, batches idle play, and preserves the exact result across mode switches", async () => {
+    const match = await prepareLiveFixture();
+    const kickoff = new Date(Date.now() + 3000);
+    await prisma.$transaction([
+      prisma.match.update({ where: { id: match.id }, data: { scheduledAt: kickoff,
+        lineupLocksAt: new Date(kickoff.getTime() - 3_600_000) } }),
+      // Deliberately leave OPEN to exercise recovery of a missed Friday close job.
+      prisma.round.update({ where: { id: match.roundId }, data: { bettingClosesAt: new Date(kickoff.getTime() - 1000) } }),
+    ]);
+    const idle = { watchedMatchIds: new Set<string>() };
+    await progressLiveMatches(prisma, new Date(kickoff.getTime() - 1), idle);
+    expect(await prisma.matchSimulation.count({ where: { matchId: match.id } })).toBe(0);
+    expect((await progressLiveMatches(prisma, kickoff, idle)).errors).toEqual([]);
+    let checkpoint = await prisma.matchSimulation.findUniqueOrThrow({ where: { matchId: match.id } });
+    expect(checkpoint.phase).toBe("LIVE");
+    expect((await prisma.round.findUniqueOrThrow({ where: { id: match.roundId } })).status).toBe("CLOSED");
+    const initialRevision = checkpoint.revision;
+    const input = checkpoint.input as unknown as SimulationInput;
+    let expected = checkpoint.state as unknown as SimulationState;
+    const expectedEvents: LiveEvent[] = [];
+    while (expected.phase !== "FINISHED") {
+      const next = stepSimulation(input, expected); expected = next.state; expectedEvents.push(...next.events);
+    }
+    await progressLiveMatches(prisma, new Date(kickoff.getTime() + 4000), idle);
+    checkpoint = await prisma.matchSimulation.findUniqueOrThrow({ where: { matchId: match.id } });
+    expect(checkpoint.revision).toBe(initialRevision);
+    // First watcher wakes the same persisted simulation on the next worker tick.
+    await progressLiveMatches(prisma, new Date(kickoff.getTime() + 4000), { watchedMatchIds: new Set([match.id]) });
+    checkpoint = await prisma.matchSimulation.findUniqueOrThrow({ where: { matchId: match.id } });
+    expect(checkpoint.revision).toBe(initialRevision + 1);
+    for (let second = 5; second <= 350 && checkpoint.phase !== "FINISHED"; second++) {
+      const watched = second >= 30 && second < 40 || second >= 170 && second < 175;
+      const result = await progressLiveMatches(prisma, new Date(kickoff.getTime() + second * 1000),
+        { watchedMatchIds: new Set(watched ? [match.id] : []) });
+      expect(result.errors).toEqual([]);
+      checkpoint = await prisma.matchSimulation.findUniqueOrThrow({ where: { matchId: match.id } });
+    }
+    expect(checkpoint.phase).toBe("FINISHED");
+    expect(checkpoint.state).toEqual(expected);
+    expect(checkpoint.revision).toBeLessThan(100);
+    expect(checkpoint.finalPayload).toEqual(simulationResult(expected));
+    const events = await prisma.matchEvent.findMany({ where: { matchId: match.id, sequence: { gt: 1 } }, orderBy: { sequence: "asc" } });
+    expect(events.map(event => event.payload)).toEqual(expectedEvents);
+    expect((await prisma.match.findUniqueOrThrow({ where: { id: match.id } })).status).toBe("RESOLVED");
+  });
+
+  it("blocks every live betting mutation, leaves pending bets untouched until FT, and pays once", async () => {
+    const http = app.getHttpServer();
+    const match = await prepareLiveFixture();
+    const signup = await request(http).post("/api/auth/signup").send({ email: "live-bettor@example.com", password: "safe-live-test-password" }).expect(201);
+    const token = signup.body.accessToken as string;
+    const userId = signup.body.user.id as string;
+    const bets = [];
+    for (const [market, selection] of [["MATCH_RESULT", "HOME"], ["MATCH_RESULT", "DRAW"], ["MATCH_RESULT", "AWAY"], ["TOTAL_CARDS", "OVER"], ["TOTAL_CORNERS", "UNDER"], ["EXACT_SCORE", "OTHER"]]) {
+      const response = await request(http).post("/api/bets").set("Authorization", `Bearer ${token}`)
+        .send({ matchId: match.id, market, selection, stake: 20 }).expect(201);
+      bets.push(response.body.bet);
+    }
+    const before = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    await request(http).post(`/api/dev/matches/${match.id}/kickoff`).expect(201);
+    expect((await prisma.round.findUniqueOrThrow({ where: { id: match.roundId } })).status).toBe("CLOSED");
+    // A stale OPEN round must not permit actions against a simulation.
+    await prisma.round.update({ where: { id: match.roundId }, data: { status: "OPEN" } });
+    const ledgerCount = await prisma.ledgerEntry.count({ where: { userId } });
+    await request(http).post("/api/bets").set("Authorization", `Bearer ${token}`)
+      .send({ matchId: match.id, market: "MATCH_RESULT", selection: "HOME", stake: 50 }).expect(409);
+    await request(http).delete(`/api/bets/${bets[0]!.id}`).set("Authorization", `Bearer ${token}`).expect(409);
+    expect(await prisma.ledgerEntry.count({ where: { userId } })).toBe(ledgerCount);
+    expect((await prisma.user.findUniqueOrThrow({ where: { id: userId } })).coinBalance).toBe(before.coinBalance);
+    const simulation = await prisma.matchSimulation.findUniqueOrThrow({ where: { matchId: match.id } });
+    for (const [seconds, phase] of [[150, "HALFTIME"], [600, "FINISHED"]] as const) {
+      await advanceLiveMatch(prisma, match.id, new Date(simulation.startedAt.getTime() + seconds * 1000), 2000);
+      expect((await prisma.matchSimulation.findUniqueOrThrow({ where: { matchId: match.id } })).phase).toBe(phase);
+      await request(http).post("/api/bets").set("Authorization", `Bearer ${token}`)
+        .send({ matchId: match.id, market: "MATCH_RESULT", selection: "HOME", stake: 50 }).expect(409);
+      await request(http).delete(`/api/bets/${bets[0]!.id}`).set("Authorization", `Bearer ${token}`).expect(409);
+      expect(await prisma.ledgerEntry.count({ where: { userId } })).toBe(ledgerCount);
+      expect((await prisma.user.findUniqueOrThrow({ where: { id: userId } })).coinBalance).toBe(before.coinBalance);
+    }
+    await prisma.round.update({ where: { id: match.roundId }, data: { status: "CLOSED" } });
+    expect(await prisma.bet.count({ where: { matchId: match.id, status: "PENDING" } })).toBe(bets.length);
+    const settled = await Promise.all([settleLiveMatch(prisma, match.id), settleLiveMatch(prisma, match.id), settleLiveMatch(prisma, match.id)]);
+    expect(settled.filter(s => s.settled)).toHaveLength(1);
+    const result = settled.find(s => s.settled)!.result!;
+    const expectedPayout = bets.reduce((sum, bet) => sum + (gradeBet(bet.market, bet.selection, result) ? calculatePayout(20, bet.oddsTaken) : 0), 0);
+    expect((await prisma.user.findUniqueOrThrow({ where: { id: userId } })).coinBalance).toBe(before.coinBalance + expectedPayout);
+    const payouts = await prisma.ledgerEntry.findMany({ where: { userId, type: "PAYOUT" } });
+    expect(new Set(payouts.map(p => p.reference)).size).toBe(payouts.length);
+    expect(await prisma.bet.count({ where: { matchId: match.id, status: "PENDING" } })).toBe(0);
+    expect((await readMatchCenter(prisma, match.id)).live?.settled).toBe(true);
+  });
+
+  it("keeps an outbox record on publication failure and safely redelivers after commit", async () => {
+    const match = await prepareLiveFixture();
+    await prisma.round.update({ where: { id: match.roundId }, data: { status: "CLOSED" } });
+    await initializeLiveMatch(prisma, match.id, new Date(), true);
+    await advanceLiveMatch(prisma, match.id, new Date(Date.now() + 5000));
+    await expect(flushMatchOutbox(prisma, async () => { throw new Error("Redis unavailable"); })).rejects.toThrow("Redis unavailable");
+    expect(await prisma.matchLiveOutbox.count({ where: { deliveredAt: null } })).toBeGreaterThan(0);
+    const messages: unknown[] = [];
+    await flushMatchOutbox(prisma, async message => { messages.push(message); });
+    expect(messages).toHaveLength(1);
+    expect(await flushMatchOutbox(prisma, async () => { throw new Error("Unexpected redelivery"); })).toBe(0);
+  });
+
+  it("recovers overdue matches and reconciles concurrent round finalization", async () => {
+    const match = await prepareLiveFixture();
+    const second = await prisma.match.findFirstOrThrow({ where: { roundId: match.roundId, id: { not: match.id } } });
+    await addGeneratedSquad(second.homeTeamId); await addGeneratedSquad(second.awayTeamId);
+    const now = new Date();
+    await prisma.round.update({ where: { id: match.roundId }, data: { status: "CLOSED", bettingClosesAt: new Date(now.getTime() - 600_000) } });
+    await prisma.match.updateMany({ where: { id: { in: [match.id, second.id] } }, data: {
+      scheduledAt: new Date(now.getTime() - 360_000), lineupLocksAt: new Date(now.getTime() - 3_960_000),
+    } });
+    // Other fixtures have already completed in this recovery scenario.
+    await prisma.match.updateMany({ where: { roundId: match.roundId, id: { notIn: [match.id, second.id] } },
+      data: { status: "RESOLVED", resultPayload: await new HomeWinEngine().resolve({} as MatchContext) } });
+    for (let sweep = 0; sweep < 12; sweep++) {
+      const progress = await progressLiveMatches(prisma, now);
+      expect(progress.errors).toEqual([]);
+    }
+    expect(await prisma.match.count({ where: { roundId: match.roundId, status: "SCHEDULED" } })).toBe(0);
+    expect((await prisma.round.findUniqueOrThrow({ where: { id: match.roundId } })).status).toBe("SETTLED");
+    expect((await progressLiveMatches(prisma, now)).advanced).toEqual([]);
   });
 
   it("builds league and bettor tables through an idempotent betting lifecycle", async () => {

@@ -7,3 +7,5 @@ export * from "./standings.js";
 export * from "./players.js";
 export * from "./formations.js";
 export * from "./squad-generator.js";
+export * from "./live.js";
+export * from "./pitch-motion.js";

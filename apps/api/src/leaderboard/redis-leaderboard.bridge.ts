@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 import { Redis } from "ioredis";
+import { LIVE_DATA_CHANNEL } from "@fb/shared";
 import { LeaderboardGateway } from "./leaderboard.gateway.js";
 
 export const LIVE_DATA_CHANGED_CHANNEL = "football-bets:live-data-changed";
@@ -28,7 +29,16 @@ export class RedisLeaderboardBridge implements OnModuleInit, OnModuleDestroy {
     this.subscriber.on("error", (error) =>
       this.logger.error(`Redis subscriber error: ${error.message}`),
     );
-    this.subscriber.on("message", (channel) => {
+    this.subscriber.on("message", (channel, body) => {
+      if (channel === LIVE_DATA_CHANNEL) {
+        try {
+          const message = JSON.parse(body) as { matchId?: unknown; settled?: unknown };
+          if (typeof message.matchId === "string") {
+            void this.gateway.broadcastMatch(message.matchId, message.settled === true)
+              .catch(error => this.logger.error("Could not broadcast match update", error));
+          }
+        } catch { this.logger.warn("Invalid match notification"); }
+      }
       if (channel === LIVE_DATA_CHANGED_CHANNEL) {
         void this.gateway.broadcast().catch((error: unknown) =>
           this.logger.error("Could not broadcast a worker live-data update", error),
@@ -38,7 +48,7 @@ export class RedisLeaderboardBridge implements OnModuleInit, OnModuleDestroy {
 
     try {
       await this.subscriber.connect();
-      await this.subscriber.subscribe(LIVE_DATA_CHANGED_CHANNEL);
+      await this.subscriber.subscribe(LIVE_DATA_CHANGED_CHANNEL, LIVE_DATA_CHANNEL);
     } catch (error) {
       this.logger.error("Could not connect the leaderboard Redis subscriber", error);
     }

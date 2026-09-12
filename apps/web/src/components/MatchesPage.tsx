@@ -1,18 +1,19 @@
 import { useMemo } from 'react';
 import { formatDate } from '../lib/format';
-import type { PlaceBetInput, Round } from '../types';
+import type { Bet, PlaceBetInput, Round } from '../types';
 import { useCountdown } from '../hooks/useCountdown';
 import { MatchCard } from './MatchCard';
 import { EmptyState, Icon, StatusPill } from './ui';
 
 interface MatchesPageProps {
+  bets: Bet[];
   round: Round | null;
   balance: number;
   managedTeamId: string | null;
   onPlaceBet: (input: PlaceBetInput) => Promise<void>;
 }
 
-export function MatchesPage({ round, balance, managedTeamId, onPlaceBet }: MatchesPageProps) {
+export function MatchesPage({ round, bets, balance, managedTeamId, onPlaceBet }: MatchesPageProps) {
   const countdown = useCountdown(round?.bettingClosesAt ?? '');
   const bettingClosed = !round || round.status.toUpperCase() !== 'OPEN' || countdown.isElapsed;
 
@@ -50,7 +51,7 @@ export function MatchesPage({ round, balance, managedTeamId, onPlaceBet }: Match
             </div>
             <h1 className="mt-4 font-display text-3xl font-bold tracking-tight sm:text-4xl">This week’s board</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
-              Compare the markets, make one call at a time, and remember: your price is locked when the bet lands.
+              {bettingClosed ? 'The picks are locked. Follow every goal, every save, every turning point.' : 'Compare the markets and lock in your picks before Friday at 23:59. Then watch the matchday unfold.'}
             </p>
           </div>
 
@@ -83,6 +84,7 @@ export function MatchesPage({ round, balance, managedTeamId, onPlaceBet }: Match
               <div className="grid gap-5 xl:grid-cols-2">
                 {matches.map((match) => (
                   <MatchCard
+                    bets={bets.filter(bet => bet.match.id === match.id)}
                     balance={balance}
                     bettingClosed={bettingClosed}
                     key={match.id}

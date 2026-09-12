@@ -12,6 +12,9 @@
     "typecheck": "pnpm --filter @fb/shared typecheck && pnpm --filter @fb/shared build && pnpm --filter @fb/core typecheck && pnpm --filter @fb/core build && pnpm --filter @fb/api typecheck && pnpm --filter @fb/worker typecheck && pnpm --filter @fb/web typecheck",
     "test": "pnpm test:unit && pnpm test:integration",
     "test:unit": "pnpm --filter @fb/shared test && pnpm --filter @fb/core test",
+    "test:browser": "playwright test",
+    "test:calibration": "pnpm --filter @fb/core exec tsx scripts/calibrate-simulation.ts 1000",
+    "verify:live": "pnpm typecheck && pnpm build && pnpm test && pnpm test:calibration && pnpm test:browser",
     "test:integration": "pnpm db:test:deploy && pnpm --filter @fb/api test",
     "db:generate": "pnpm --filter @fb/core exec prisma generate",
     "db:migrate": "DATABASE_URL=${DATABASE_URL:-postgresql://football:football@localhost:5432/football?schema=public} pnpm --filter @fb/core exec prisma migrate dev",
@@ -24,5 +27,8 @@
     "compose:up": "docker compose --env-file .env -f infra/docker-compose.yml up --build",
     "compose:down": "docker compose -f infra/docker-compose.yml down",
     "compose:dev": "docker compose -f infra/docker-compose.dev.yml up -d"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
   }
 }

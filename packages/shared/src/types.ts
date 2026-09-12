@@ -112,6 +112,8 @@ export interface PublicTeamFixtureDto {
   homeTeam: TeamSummary;
   awayTeam: TeamSummary;
   result: MatchResultPayload | null;
+  live?: import("./live.js").LiveMatchSummary | null;
+  supportsLive?: boolean;
 }
 
 export interface PublicTeamMatchHistoryPageDto {
